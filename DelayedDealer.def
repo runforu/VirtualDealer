@@ -1,0 +1,12 @@
+LIBRARY DelayedDealer
+
+EXPORTS
+    MtSrvAbout
+    MtSrvStartup
+    MtSrvPluginCfgAdd
+    MtSrvPluginCfgSet
+    MtSrvPluginCfgGet
+    MtSrvPluginCfgNext
+    MtSrvPluginCfgDelete
+    MtSrvPluginCfgTotal
+    MtSrvTradeRequestApply
