@@ -71,7 +71,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_USE_32BIT_TIME_T</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_RELEASE_LOG_;WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_USE_32BIT_TIME_T</PreprocessorDefinitions>
       <StringPooling>false</StringPooling>
       <ExceptionHandling />
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -89,6 +89,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalIncludeDirectories>C:\Program Files (x86)\Windows Kits\10\Include\10.0.17134.0\um;C:\Program Files %28x86%29\Windows Kits\10\Include\10.0.17134.0\ucrt;D:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.14.26428\include</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile />
+      <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -174,15 +175,17 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="common\common.cpp" />
+    <ClCompile Include="common\Loger.cpp" />
     <ClCompile Include="config\Configuration.cpp" />
-    <ClCompile Include="config\stringfile.cpp" />
+    <ClCompile Include="config\CStringFile.cpp" />
     <ClCompile Include="DelayedDealer.cpp" />
     <ClCompile Include="Processor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common\common.h" />
+    <ClInclude Include="common\Loger.h" />
     <ClInclude Include="config\Configuration.h" />
-    <ClInclude Include="config\stringfile.h" />
+    <ClInclude Include="config\CStringFile.h" />
     <ClInclude Include="Processor.h" />
   </ItemGroup>
   <ItemGroup>

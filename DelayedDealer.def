@@ -10,3 +10,12 @@ EXPORTS
     MtSrvPluginCfgDelete
     MtSrvPluginCfgTotal
     MtSrvTradeRequestApply
+    MtSrvTradeStopsFilter
+    MtSrvTradeStopsApply
+    MtSrvTradePendingsFilter
+    MtSrvTradePendingsApply
+    MtSrvTradeStopoutsFilter
+    MtSrvTradeStopoutsApply
+    MtSrvTradesAddExt
+    MtSrvTradesUpdate
+	MtSrvTradeTransaction
