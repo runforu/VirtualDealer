@@ -1,10 +1,10 @@
-#include "CStringFile.h"
+#include "FileUtil.h"
 
 
 //+------------------------------------------------------------------+
 //| Constructor                                                      |
 //+------------------------------------------------------------------+
-CStringFile::CStringFile(const int nBufSize)
+FileUtil::FileUtil(const int nBufSize)
     : m_file(INVALID_HANDLE_VALUE)
     , m_file_size(0)
     , m_buffer(new BYTE[nBufSize])
@@ -16,7 +16,7 @@ CStringFile::CStringFile(const int nBufSize)
 //+------------------------------------------------------------------+
 //| Destructor                                                       |
 //+------------------------------------------------------------------+
-CStringFile::~CStringFile() {
+FileUtil::~FileUtil() {
     //--- close the connection
     Close();
     //--- release the buffer
@@ -30,7 +30,7 @@ CStringFile::~CStringFile() {
 //| dwAccess       -GENERIC_READ or  GENERIC_WRITE                   |
 //| dwCreationFlags-CREATE_ALWAYS, OPEN_EXISTING, OPEN_ALWAYS        |
 //+------------------------------------------------------------------+
-bool CStringFile::Open(LPCTSTR lpFileName, const DWORD dwAccess, const DWORD dwCreationFlags) {
+bool FileUtil::Open(LPCTSTR lpFileName, const DWORD dwAccess, const DWORD dwCreationFlags) {
     //--- close on every case previous file
     Close();
  
@@ -48,7 +48,7 @@ bool CStringFile::Open(LPCTSTR lpFileName, const DWORD dwAccess, const DWORD dwC
 //+------------------------------------------------------------------+
 //| read length of bytes into buffer                                 |
 //+------------------------------------------------------------------+
-int CStringFile::Read(void* buffer, const DWORD length) {
+int FileUtil::Read(void* buffer, const DWORD length) {
     DWORD readed = 0;
  
     if (m_file == INVALID_HANDLE_VALUE || buffer == NULL || length < 1)
@@ -62,7 +62,7 @@ int CStringFile::Read(void* buffer, const DWORD length) {
 //+------------------------------------------------------------------+
 //| Write length of buffer into file                                 |
 //+------------------------------------------------------------------+
-int CStringFile::Write(const void* buffer, const DWORD length) {
+int FileUtil::Write(const void* buffer, const DWORD length) {
     DWORD written = 0;
  
     if (m_file == INVALID_HANDLE_VALUE || buffer == NULL || length < 1)
@@ -76,7 +76,7 @@ int CStringFile::Write(const void* buffer, const DWORD length) {
 //+------------------------------------------------------------------+
 //| Reset                                 |
 //+------------------------------------------------------------------+
-void CStringFile::Reset() {
+void FileUtil::Reset() {
     //--- reset counters
     m_buffer_index = 0;
     m_buffer_readed = 0;
@@ -88,7 +88,7 @@ void CStringFile::Reset() {
 //+------------------------------------------------------------------+
 //| Read a line within maxsize bytes                                  |
 //+------------------------------------------------------------------+
-int CStringFile::GetNextLine(char* line, const int maxsize) {
+int FileUtil::GetNextLine(char* line, const int maxsize) {
     char *currsym = line, *lastsym = line + maxsize;
     BYTE* curpos = m_buffer + m_buffer_index;
  

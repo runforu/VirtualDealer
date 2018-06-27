@@ -1,18 +1,10 @@
 #ifndef _PROCESSOR_H_
 #define _PROCESSOR_H_
-#include "Config/Configuration.h"
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
-#define PRICE_BUFFER_SIZE 7
-//+------------------------------------------------------------------+
-//| Processor                                                        |
-//+------------------------------------------------------------------+
-struct TransactionInfo {
-    TradeTransInfo* trans;
-    const UserInfo* user;
-    int* request_id;
-};
+
+#include "Config/Config.h"
+
+enum PriceOption { PO_WORST_PRICE, PO_BEST_PRICE, PO_FIRST_PRICE, PO_NEXT_PRICE, PO_ORDER_PRICE };
+
 //+------------------------------------------------------------------+
 //| Processor                                                        |
 //+------------------------------------------------------------------+
@@ -21,38 +13,41 @@ public:
     //--- dealer user info
     UserInfo m_manager;
 
-    int m_delay_miliseconds;
+    //--- configurations
+    int m_delay_milisecond;
     int m_virtual_dealer_login;
-    //--- wp: worst price; bp: best price; fp: first price; np: next price; op: price of order opening 
-    char m_price_option[8];
     int m_disable_virtual_dealer;
+    int m_enable_comment;
+    int m_update_config;
+    int m_enable_tp_slippage;
+
+    //--- wp: worst price; bp: best price; fp: first price; np: next price; op: price of order opening
+    char m_price_option[4];
     char m_group[256];
     char m_symbols[256];
 
     //--- statistics
     LONG m_reinitialize_flag;
     int m_requests_total;
-    int m_requests_processed; 
+    int m_requests_processed;
 
-    CSync m_sync;
+    Synchronizer m_sync;
 
 public:
     CProcessor();
     ~CProcessor();
 
     void Initialize();
-    inline void Reinitialize() {
-        InterlockedExchange(&m_reinitialize_flag, 1);
-    }
+    void UpdateConfig();
+    inline void Reinitialize() { InterlockedExchange(&m_reinitialize_flag, 1); }
     void ShowStatus();
-    int ProcessTradeTransaction(TradeTransInfo* trans, const UserInfo* user, int* request_id);
     void ProcessRequest(RequestInfo* request);
-    void ProcessTradeAdd(TradeRecord* trade, const UserInfo* user, const ConSymbol* symb, const int mode);
+    PriceOption GetPriceOption(char* price_option);
 
 private:
-    static DWORD WINAPI Delay(LPVOID lpParameter);
+    static DWORD WINAPI Delay(LPVOID parameter);
 };
 
 extern CProcessor ExtProcessor;
 //+------------------------------------------------------------------+
-#endif // !_PROCESSOR_H_
+#endif  // !_PROCESSOR_H_

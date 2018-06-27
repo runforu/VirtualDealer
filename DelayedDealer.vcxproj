@@ -176,17 +176,22 @@
   <ItemGroup>
     <ClCompile Include="common\common.cpp" />
     <ClCompile Include="common\Loger.cpp" />
-    <ClCompile Include="config\Configuration.cpp" />
-    <ClCompile Include="config\CStringFile.cpp" />
+    <ClCompile Include="config\Config.cpp" />
+    <ClCompile Include="config\FileUtil.cpp" />
+    <ClCompile Include="config\FileConfig.cpp" />
     <ClCompile Include="DelayedDealer.cpp" />
+    <ClCompile Include="Factory.cpp" />
     <ClCompile Include="Processor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common\common.h" />
     <ClInclude Include="common\Loger.h" />
-    <ClInclude Include="config\Configuration.h" />
-    <ClInclude Include="config\CStringFile.h" />
+    <ClInclude Include="config\Config.h" />
+    <ClInclude Include="config\FileUtil.h" />
+    <ClInclude Include="config\FileConfig.h" />
+    <ClInclude Include="Factory.h" />
     <ClInclude Include="Processor.h" />
+    <ClInclude Include="Synchronizer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="DelayedDealer.def" />

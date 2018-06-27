@@ -4,41 +4,23 @@
 #include <time.h>
 #include <windows.h>
 #include "../../include/MT4ServerAPI.h"
+#include "../Synchronizer.h"
 #include "../common/common.h"
 
 //+------------------------------------------------------------------+
-//| Simple synchronizer                                              |
-//+------------------------------------------------------------------+
-class CSync {
-private:
-    CRITICAL_SECTION m_cs;
-
-public:
-    CSync() {
-        ZeroMemory(&m_cs, sizeof(m_cs));
-        InitializeCriticalSection(&m_cs);
-    }
-    ~CSync() {
-        DeleteCriticalSection(&m_cs);
-        ZeroMemory(&m_cs, sizeof(m_cs));
-    }
-    inline void Lock() { EnterCriticalSection(&m_cs); }
-    inline void Unlock() { LeaveCriticalSection(&m_cs); }
-};
-//+------------------------------------------------------------------+
 //| Simple configuration                                             |
 //+------------------------------------------------------------------+
-class CConfiguration {
+class Config {
+    friend class Factory;
+
 private:
-    CSync m_sync; // synchronizer
-    char m_filename[MAX_PATH]; // name of the configuration file
-    PluginCfg* m_cfg; // configs
-    int m_cfg_total; // total number of records
-    int m_cfg_max; // max number of records
+    Synchronizer m_sync;        // synchronizer
+    char m_filename[MAX_PATH];  // name of the configuration file
+    PluginCfg* m_cfg;           // configs
+    int m_cfg_total;            // total number of records
+    int m_cfg_max;              // max number of records
 
 public:
-    CConfiguration();
-    ~CConfiguration();
     //--- Initializing the database (reading the config file)
     void Load(LPCSTR filename);
     //--- access
@@ -58,12 +40,16 @@ public:
     int GetString(LPCSTR name, LPTSTR value, const int maxlen, LPCSTR defvalue = NULL);
 
 private:
+    Config();
+    ~Config();
+    Config(Config const&) {}
+    void operator=(Config const&) {}
     void Save(void);
     PluginCfg* Search(LPCSTR name);
     static int SortByName(const void* left, const void* right);
     static int SearchByName(const void* left, const void* right);
 };
 
-extern CConfiguration ExtConfig;
+//extern Config ExtConfig;
 //+------------------------------------------------------------------+
-#endif // !_CONFIGURATION_H_
+#endif  // !_CONFIGURATION_H_

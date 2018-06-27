@@ -6,7 +6,7 @@
 //+------------------------------------------------------------------+
 //|  String reading class                                            |
 //+------------------------------------------------------------------+
-class CStringFile {
+class FileUtil {
 private:
     HANDLE m_file; // file handle
     DWORD m_file_size; // file size
@@ -17,8 +17,8 @@ private:
     int m_buffer_line; // the counter of lines in a file
 
 public:
-    CStringFile(const int nBufSize = 65536);
-    ~CStringFile();
+    FileUtil(const int nBufSize = 65536);
+    ~FileUtil();
 
     bool Open(LPCTSTR lpFileName, const DWORD dwAccess, const DWORD dwCreationFlags);
     inline void Close() {

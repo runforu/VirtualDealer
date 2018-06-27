@@ -1,6 +1,7 @@
-#include "Config/Configuration.h"
+#include "Config/Config.h"
 #include "Processor.h"
 #include "common/Loger.h"
+#include "Factory.h"
 
 PluginInfo ExtPluginInfo = { "Delayed Dealer", 1, "Moa International.", { 0 } };
 CServerInterface* ExtServer = NULL;
@@ -19,8 +20,14 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD ul_reason_for_call, LPVOID /*lpReser
             *cp = 0;
             strcat(tmp, ".ini");
         }
-        //--- load configuration
-        ExtConfig.Load(tmp);
+
+        //--- load file configuration
+        Factory::GetConfig()->Load(tmp);
+        if ((cp = strrchr(tmp, '.')) != NULL) {
+            *cp = 0;
+            strcat(tmp, ".cfg");
+        }
+        Factory::GetFileConfig()->Load(tmp);
         break;
 
     case DLL_THREAD_ATTACH:
@@ -56,7 +63,7 @@ int APIENTRY MtSrvStartup(CServerInterface* server) {
     ExtServer = server;
     //--- initialize dealer helper
     ExtProcessor.Initialize();
-    Loger::out(31415, "DelayedDealer", "DelayedDealer initialized by server.");
+    LOG(31415, "DelayedDealer", "DelayedDealer initialized by server.");
     return (TRUE);
 }
 //+------------------------------------------------------------------+
@@ -69,7 +76,7 @@ void APIENTRY MtSrvCleanup() {
 //| Standard configuration functions                                 |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvPluginCfgAdd(const PluginCfg* cfg) {
-    Loger::out(31415, "DelayedDealer", "MtSrvPluginCfgAdd name=%s, value=%s.", cfg->name, cfg->value);
+    LOG(31415, "DelayedDealer", "MtSrvPluginCfgAdd name=%s, value=%s.", cfg->name, cfg->value);
     int res = ExtConfig.Add(cfg);
     ExtProcessor.Reinitialize();
     return (res);
@@ -78,7 +85,7 @@ int APIENTRY MtSrvPluginCfgAdd(const PluginCfg* cfg) {
 //|                                                                  |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvPluginCfgSet(const PluginCfg* values, const int total) {
-    Loger::out(31415, "DelayedDealer", "MtSrvPluginCfgSet total = %d.", total);
+    LOG(31415, "DelayedDealer", "MtSrvPluginCfgSet total = %d.", total);
     int res = ExtConfig.Set(values, total);
     ExtProcessor.Reinitialize();
     return (res);
@@ -87,7 +94,7 @@ int APIENTRY MtSrvPluginCfgSet(const PluginCfg* values, const int total) {
 //|                                                                  |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvPluginCfgDelete(LPCSTR name) {
-    Loger::out(31415, "DelayedDealer", "MtSrvPluginCfgDelete %s.", name);
+    LOG(31415, "DelayedDealer", "MtSrvPluginCfgDelete %s.", name);
     int res = ExtConfig.Delete(name);
     ExtProcessor.Reinitialize();
     return (res);
@@ -96,103 +103,98 @@ int APIENTRY MtSrvPluginCfgDelete(LPCSTR name) {
 //|                                                                  |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvPluginCfgGet(LPCSTR name, PluginCfg* cfg) {
-    Loger::out(31415, "DelayedDealer", "MtSrvPluginCfgGet name=%s.", name);
+    LOG(31415, "DelayedDealer", "MtSrvPluginCfgGet name=%s.", name);
     return ExtConfig.Get(name, cfg);
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvPluginCfgNext(const int index, PluginCfg* cfg) {
-    Loger::out(31415, "DelayedDealer", "MtSrvPluginCfgNext index=%d, name=%s, value=%s.", index, cfg->name, cfg->value);
+    LOG(31415, "DelayedDealer", "MtSrvPluginCfgNext index=%d, name=%s, value=%s.", index, cfg->name, cfg->value);
     return ExtConfig.Next(index, cfg);
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvPluginCfgTotal() {
-    Loger::out(31415, "DelayedDealer", "MtSrvPluginCfgTotal.");
+    LOG(31415, "DelayedDealer", "MtSrvPluginCfgTotal.");
     return ExtConfig.Total();
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvTradeRequestFilter(RequestInfo* request, const int isdemo) {
-    Loger::out(31415, "DelayedDealer", "MtSrvTradeRequestFilter.");
+    LOG(31415, "DelayedDealer", "MtSrvTradeRequestFilter.");
     return RET_OK;
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvTradeTransaction(TradeTransInfo* trans, const UserInfo* user, int* request_id) {
-    Loger::out(31415, "DelayedDealer", "MtSrvTradeTransaction.");
-    if (trans != NULL && user != NULL) {
-        ExtProcessor.ProcessTradeTransaction(trans, user, request_id);
-    }
+    LOG(31415, "DelayedDealer", "MtSrvTradeTransaction.");
     return RET_OK;
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 void APIENTRY MtSrvTradeRequestApply(RequestInfo* request, const int isdemo) {
-    Loger::out(31415, "DelayedDealer", "MtSrvTradeRequestApply.");
+    LOG(31415, "DelayedDealer", "MtSrvTradeRequestApply.");
     if (request != NULL && isdemo == FALSE) {
         ExtProcessor.ProcessRequest(request);
     }
-    Loger::out(31415, "DelayedDealer", "MtSrvTradeRequestApply end.");
+    LOG(31415, "DelayedDealer", "MtSrvTradeRequestApply end.");
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvTradeStopsFilter(const ConGroup* group, const ConSymbol* symbol, const TradeRecord* trade) {
-    Loger::out(31415, "DelayedDealer", "MtSrvTradeStopsFilter.");
+    LOG(31415, "DelayedDealer", "MtSrvTradeStopsFilter.");
     return RET_OK;
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvTradeStopsApply(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol, TradeRecord* trade, const int isTP) {
-    Loger::out(31415, "DelayedDealer", "MtSrvTradeStopsApply.");
+    LOG(31415, "DelayedDealer", "MtSrvTradeStopsApply.");
     return RET_OK;
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvTradePendingsFilter(const ConGroup* group, const ConSymbol* symbol, const TradeRecord* trade) {
-    Loger::out(31415, "DelayedDealer", "MtSrvTradePendingsFilter.");
-    Loger::out(31415, "DelayedDealer", "group= %s, symbol= %s, trade id = %d", group->group, symbol->symbol, trade->order);
+    LOG(31415, "DelayedDealer", "MtSrvTradePendingsFilter.");
     return RET_OK;
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvTradePendingsApply(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol, const TradeRecord* pending, TradeRecord* trade) {
-    Loger::out(31415, "DelayedDealer", "MtSrvTradePendingsApply.");
+    LOG(31415, "DelayedDealer", "MtSrvTradePendingsApply.");
     return RET_OK;
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvTradeStopoutsFilter(const ConGroup* group, const ConSymbol* symbol, const int login, const double equity, const double margin) {
-    Loger::out(31415, "DelayedDealer", "MtSrvTradeStopoutsFilter.");
+    LOG(31415, "DelayedDealer", "MtSrvTradeStopoutsFilter.");
     return RET_OK;
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvTradeStopoutsApply(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol, TradeRecord* stopout) {
-    Loger::out(31415, "DelayedDealer", "MtSrvTradeStopoutsApply.");
+    LOG(31415, "DelayedDealer", "MtSrvTradeStopoutsApply.");
     return RET_OK;
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 void APIENTRY MtSrvTradesAddExt(TradeRecord* trade, const UserInfo* user, const ConSymbol* symb, const int mode) {
-    Loger::out(31415, "DelayedDealer", "MtSrvTradesAddExt.");
-    ExtProcessor.ProcessTradeAdd(trade, user, symb, mode);
+    LOG(31415, "DelayedDealer", "MtSrvTradesAddExt.");
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
 /**/
 void APIENTRY MtSrvTradesUpdate(TradeRecord* trade, UserInfo* user, const int mode) {
-    Loger::out(31415, "DelayedDealer", "MtSrvTradesUpdate.");
+    LOG(31415, "DelayedDealer", "MtSrvTradesUpdate.");
 }

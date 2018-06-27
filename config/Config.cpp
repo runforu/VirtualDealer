@@ -1,12 +1,12 @@
 #include <stdio.h>
-#include "Configuration.h"
-#include "CStringFile.h"
+#include "Config.h"
+#include "FileUtil.h"
 
-CConfiguration ExtConfig;
+//Config ExtConfig;
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-CConfiguration::CConfiguration()
+Config::Config()
     : m_cfg(NULL)
     , m_cfg_total(0)
     , m_cfg_max(0) {
@@ -15,7 +15,7 @@ CConfiguration::CConfiguration()
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-CConfiguration::~CConfiguration() {
+Config::~Config() {
     m_sync.Lock();
 
     if (m_cfg != NULL) {
@@ -29,9 +29,9 @@ CConfiguration::~CConfiguration() {
 //+------------------------------------------------------------------+
 //| Load config from file                                            |
 //+------------------------------------------------------------------+
-void CConfiguration::Load(LPCSTR filename) {
+void Config::Load(LPCSTR filename) {
     char tmp[MAX_PATH], *cp, *start;
-    CStringFile in;
+    FileUtil in;
     PluginCfg cfg, *buf;
  
     if (filename == NULL)
@@ -92,8 +92,8 @@ void CConfiguration::Load(LPCSTR filename) {
 //+------------------------------------------------------------------+
 //| save configs to file                                             |
 //+------------------------------------------------------------------+
-void CConfiguration::Save(void) {
-    CStringFile out;
+void Config::Save(void) {
+    FileUtil out;
     char tmp[512];
     //--- write
     m_sync.Lock();
@@ -114,7 +114,7 @@ void CConfiguration::Save(void) {
 //+------------------------------------------------------------------+
 //| Search config by name                                            |
 //+------------------------------------------------------------------+
-PluginCfg* CConfiguration::Search(LPCSTR name) {
+PluginCfg* Config::Search(LPCSTR name) {
     PluginCfg* config = NULL;
 
     if (m_cfg != NULL && m_cfg_total > 0)
@@ -126,7 +126,7 @@ PluginCfg* CConfiguration::Search(LPCSTR name) {
 //+------------------------------------------------------------------+
 //| Add config                                                       |
 //+------------------------------------------------------------------+
-int CConfiguration::Add(const PluginCfg* cfg) {
+int Config::Add(const PluginCfg* cfg) {
     PluginCfg *config, *buf;
  
     if (cfg == NULL || cfg->name[0] == 0)
@@ -167,7 +167,7 @@ int CConfiguration::Add(const PluginCfg* cfg) {
 //+------------------------------------------------------------------+
 //| Batch set configs                                       |
 //+------------------------------------------------------------------+
-int CConfiguration::Set(const PluginCfg* values, const int total) {
+int Config::Set(const PluginCfg* values, const int total) {
  
     if (total < 0)
         return (FALSE);
@@ -202,7 +202,7 @@ int CConfiguration::Set(const PluginCfg* values, const int total) {
 //+------------------------------------------------------------------+
 //| Look for config by name                                          |
 //+------------------------------------------------------------------+
-int CConfiguration::Get(LPCSTR name, PluginCfg* cfg) {
+int Config::Get(LPCSTR name, PluginCfg* cfg) {
     PluginCfg* config = NULL;
     if (name != NULL && cfg != NULL) {
         m_sync.Lock();
@@ -210,13 +210,12 @@ int CConfiguration::Get(LPCSTR name, PluginCfg* cfg) {
             memcpy(cfg, config, sizeof(PluginCfg));
         m_sync.Unlock();
     }
-    //--- return
     return (config != NULL);
 }
 //+------------------------------------------------------------------+
 //| Get config at index                                              |
 //+------------------------------------------------------------------+
-int CConfiguration::Next(const int index, PluginCfg* cfg) {
+int Config::Next(const int index, PluginCfg* cfg) {
     if (cfg != NULL && index >= 0) {
         m_sync.Lock();
         if (m_cfg != NULL && index < m_cfg_total) {
@@ -232,7 +231,7 @@ int CConfiguration::Next(const int index, PluginCfg* cfg) {
 //+------------------------------------------------------------------+
 //| Remove config by name                                            |
 //+------------------------------------------------------------------+
-int CConfiguration::Delete(LPCSTR name) {
+int Config::Delete(LPCSTR name) {
     PluginCfg* config = NULL;
     if (name != NULL) {
         m_sync.Lock();
@@ -253,19 +252,19 @@ int CConfiguration::Delete(LPCSTR name) {
 //+------------------------------------------------------------------+
 //| Sort by name                                                     |
 //+------------------------------------------------------------------+
-int CConfiguration::SortByName(const void* left, const void* right) {
+int Config::SortByName(const void* left, const void* right) {
     return strcmp(((PluginCfg*)left)->name, ((PluginCfg*)right)->name);
 }
 //+------------------------------------------------------------------+
 //| Compare right's name with left |
 //+------------------------------------------------------------------+
-int CConfiguration::SearchByName(const void* left, const void* right) {
+int Config::SearchByName(const void* left, const void* right) {
     return strcmp((char*)left, ((PluginCfg*)right)->name);
 }
 //+------------------------------------------------------------------+
 //| Obtain integer value form config with "name"                       |
 //+------------------------------------------------------------------+
-int CConfiguration::GetInteger(LPCSTR name, int* value, LPCSTR defvalue) {
+int Config::GetInteger(LPCSTR name, int* value, LPCSTR defvalue) {
     PluginCfg* config = NULL;
     if (name != NULL && value != NULL) {
         m_sync.Lock();
@@ -290,7 +289,7 @@ int CConfiguration::GetInteger(LPCSTR name, int* value, LPCSTR defvalue) {
 //+------------------------------------------------------------------+
 //| Get string value                                            |
 //+------------------------------------------------------------------+
-int CConfiguration::GetString(LPCSTR name, LPTSTR value, const int maxlen,
+int Config::GetString(LPCSTR name, LPTSTR value, const int maxlen,
                               LPCSTR defvalue) {
     PluginCfg* config = NULL;
     if (name != NULL && value != NULL) {
