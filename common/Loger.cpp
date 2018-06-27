@@ -6,7 +6,6 @@
 
 #ifdef _RELEASE_LOG_  
 
-
 void Loger::out(const int code, LPCSTR ip, LPCSTR msg, ...) {
     if (Factory::GetServerInterface() == NULL || msg == NULL) {
         return;
@@ -25,7 +24,6 @@ void Loger::out(const int code, LPCSTR ip, RequestInfo* request) {
     Loger::out(31415, "DelayedDealer", "RequestInfo, request id = %d; status = %d; time = %d; manager = %d; login = %d; group= %s; balance = %f; credit = %f; pricees = [%f, %f]; gw_volume = %d; gw order ticket = %d, gw_price = %f.",
                request->id, request->status, request->time, request->manager, request->login, request->group, request->balance, request->credit, request->prices[0], request->prices[1], request->gw_volume, request->gw_order, request->gw_price);
 }
-
 
 void Loger::out(const int code, LPCSTR ip, TradeTransInfo* transaction) {
     char* trans_type[] = {

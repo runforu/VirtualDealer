@@ -1,4 +1,4 @@
-LIBRARY DelayedDealer
+LIBRARY VirtualDealer
 
 EXPORTS
     MtSrvAbout
