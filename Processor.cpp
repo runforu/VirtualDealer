@@ -1,12 +1,8 @@
 #include <stdio.h>
+#include "Factory.h"
 #include "Processor.h"
 #include "common/Loger.h"
 #include "config/FileConfig.h"
-#include "Factory.h"
-
-extern CServerInterface* ExtServer;
-
-CProcessor ExtProcessor;
 
 struct RequestHelper {
     RequestInfo* m_request_info;
@@ -17,7 +13,7 @@ struct RequestHelper {
 //+------------------------------------------------------------------+
 //| Constructor                                                      |
 //+------------------------------------------------------------------+
-CProcessor::CProcessor()
+Processor::Processor()
     : m_reinitialize_flag(0),
       m_delay_milisecond(1000),
       m_virtual_dealer_login(31415),
@@ -27,7 +23,6 @@ CProcessor::CProcessor()
       m_enable_tp_slippage(0),
       m_requests_total(0),
       m_requests_processed(0) {
-    //--- fill user info
     ZeroMemory(&m_manager, sizeof(m_manager));
     m_manager.login = 31415;
     COPY_STR(m_manager.name, "Delayed Dealer");
@@ -37,27 +32,28 @@ CProcessor::CProcessor()
 //+------------------------------------------------------------------+
 //| Destructor                                                       |
 //+------------------------------------------------------------------+
-CProcessor::~CProcessor() {}
+Processor::~Processor() {}
 //+------------------------------------------------------------------+
 //| Reading of config file                                           |
 //+------------------------------------------------------------------+
-void CProcessor::Initialize() {
-    ExtConfig.GetInteger("Delayed Miliseconds", &m_delay_milisecond, "1000");
-    ExtConfig.GetInteger("Virtual Dealer", &m_virtual_dealer_login, "31415");
-    ExtConfig.GetInteger("Disable Plugin", &m_disable_virtual_dealer, "0");
-    ExtConfig.GetInteger("Enable Comment", &m_enable_comment, "0");
-    ExtConfig.GetInteger("Update Config", &m_update_config, "0");
-    ExtConfig.GetInteger("Enable TP Slippage", &m_enable_tp_slippage, "0");
+void Processor::Initialize() {
+    Factory::GetConfig()->GetInteger("Delayed Miliseconds", &m_delay_milisecond, "1000");
+    Factory::GetConfig()->GetInteger("Virtual Dealer", &m_virtual_dealer_login, "31415");
+    m_manager.login = m_virtual_dealer_login;
+    Factory::GetConfig()->GetInteger("Disable Plugin", &m_disable_virtual_dealer, "0");
+    Factory::GetConfig()->GetInteger("Enable Comment", &m_enable_comment, "0");
+    Factory::GetConfig()->GetInteger("Update Config", &m_update_config, "0");
+    Factory::GetConfig()->GetInteger("Enable TP Slippage", &m_enable_tp_slippage, "0");
 
-    ExtConfig.GetString("Price Option", m_price_option, sizeof(m_price_option) - 1, "wp");
+    Factory::GetConfig()->GetString("Price Option", m_price_option, sizeof(m_price_option) - 1, "wp");
     if (m_price_option[0] == 0) {
         COPY_STR(m_price_option, "wp");
     }
-    ExtConfig.GetString("Group", m_group, sizeof(m_group) - 1, "*");
+    Factory::GetConfig()->GetString("Group", m_group, sizeof(m_group) - 1, "*");
     if (m_group[0] == 0) {
         COPY_STR(m_group, "*");
     }
-    ExtConfig.GetString("Symbols", m_symbols, sizeof(m_symbols) - 1, "*");
+    Factory::GetConfig()->GetString("Symbols", m_symbols, sizeof(m_symbols) - 1, "*");
     if (m_symbols[0] == 0) {
         COPY_STR(m_symbols, "*");
     }
@@ -65,8 +61,8 @@ void CProcessor::Initialize() {
 //+------------------------------------------------------------------+
 //| Show statistics                                                  |
 //+------------------------------------------------------------------+
-void CProcessor::ShowStatus() {
-    if (ExtServer != NULL && m_requests_total > 0) {
+void Processor::ShowStatus() {
+    if (Factory::GetServerInterface() != NULL && m_requests_total > 0) {
         //--- this line is used by the Log Analyser in order to calculate the requests
         //--- processed by the Helper, this is why it is not recommended to modify it
         LOG(31415, "DelayedDealer", "'%d': %d of %d requests processed (%.2lf%%)", m_manager.login, m_requests_processed,
@@ -76,8 +72,8 @@ void CProcessor::ShowStatus() {
 //+------------------------------------------------------------------+
 //| Delay Request                                                    |
 //+------------------------------------------------------------------+
-DWORD WINAPI CProcessor::Delay(LPVOID parameter) {
-    if (ExtServer == NULL) {
+DWORD WINAPI Processor::Delay(LPVOID parameter) {
+    if (Factory::GetServerInterface() == NULL) {
         return 0;
     }
 
@@ -87,10 +83,11 @@ DWORD WINAPI CProcessor::Delay(LPVOID parameter) {
 
     Sleep(requestHelper->m_delay_milisecond);
 
-    ExtServer->RequestsFree(requestHelper->m_request_info->id, ExtProcessor.m_manager.login);
+    Factory::GetServerInterface()->RequestsFree(requestHelper->m_request_info->id, Factory::GetProcessor()->m_manager.login);
     double prices[2] = {0};
-    ExtServer->HistoryPricesGroup(requestHelper->m_request_info, prices);
-    ExtServer->RequestsConfirm(requestHelper->m_request_info->id, &ExtProcessor.m_manager, prices);
+    Factory::GetServerInterface()->HistoryPricesGroup(requestHelper->m_request_info, prices);
+    Factory::GetServerInterface()->RequestsConfirm(requestHelper->m_request_info->id, &Factory::GetProcessor()->m_manager,
+                                                   prices);
 
     delete requestHelper;
 
@@ -100,8 +97,8 @@ DWORD WINAPI CProcessor::Delay(LPVOID parameter) {
 //+------------------------------------------------------------------+
 //| Request processing                                               |
 //+------------------------------------------------------------------+
-void CProcessor::ProcessRequest(RequestInfo* request) {
-    if (ExtServer == NULL) {
+void Processor::ProcessRequest(RequestInfo* request) {
+    if (Factory::GetServerInterface() == NULL) {
         return;
     }
 
@@ -119,17 +116,20 @@ void CProcessor::ProcessRequest(RequestInfo* request) {
 
     //--- plugin disabled
     if (m_disable_virtual_dealer == 1) {
+        LOG(31415, "DelayedDealer", "m_disable_virtual_dealer == 1.");
         return;
     }
 
     //--- global group check
     if (strcmp(m_group, "*") != 0 && strstr(m_group, request->group) == NULL) {
+        LOG(31415, "DelayedDealer", "group check");
         return;
     }
 
     //--- global symbol check
     TradeTransInfo* trans = &request->trade;
     if (strcmp(m_symbols, "*") != 0 && strstr(m_symbols, trans->symbol) == NULL) {
+        LOG(31415, "DelayedDealer", "symbol check");
         return;
     }
 
@@ -141,21 +141,21 @@ void CProcessor::ProcessRequest(RequestInfo* request) {
 
     //--- apply cfg file config
 
-    ExtServer->RequestsLock(request->id, m_manager.login);
+    Factory::GetServerInterface()->RequestsLock(request->id, m_manager.login);
     LOG(31415, "DelayedDealer", "In main thread, Request locked.");
 
-    HANDLE hThread = CreateThread(NULL, 0, CProcessor::Delay, (LPVOID)requestHelper, 0, NULL);
+    HANDLE hThread = CreateThread(NULL, 0, Processor::Delay, (LPVOID)requestHelper, 0, NULL);
     m_requests_total++;
 }
 //+------------------------------------------------------------------+
 //| Update config                                               |
 //+------------------------------------------------------------------+
-void CProcessor::UpdateConfig() { Factory::GetFileConfig(); }
+void Processor::UpdateConfig() { Factory::GetFileConfig(); }
 
 //+------------------------------------------------------------------+
 //| get price option                                               |
 //+------------------------------------------------------------------+
-PriceOption CProcessor::GetPriceOption(char* price_option) {
+PriceOption Processor::GetPriceOption(char* price_option) {
     if (price_option == NULL) {
         return PO_WORST_PRICE;
     }

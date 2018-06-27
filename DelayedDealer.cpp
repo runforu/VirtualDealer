@@ -4,7 +4,6 @@
 #include "Factory.h"
 
 PluginInfo ExtPluginInfo = { "Delayed Dealer", 1, "Moa International.", { 0 } };
-CServerInterface* ExtServer = NULL;
 
 //+------------------------------------------------------------------+
 //| DLL entry point                                                  |
@@ -35,7 +34,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD ul_reason_for_call, LPVOID /*lpReser
         break;
 
     case DLL_PROCESS_DETACH:
-        ExtProcessor.ShowStatus();
+        Factory::GetProcessor()->ShowStatus();
         break;
     }
     return (TRUE);
@@ -60,9 +59,10 @@ int APIENTRY MtSrvStartup(CServerInterface* server) {
         return (FALSE);
     }
     //--- save server interface link
-    ExtServer = server;
+    Factory::SetServerInterface(server);
+
     //--- initialize dealer helper
-    ExtProcessor.Initialize();
+    Factory::GetProcessor()->Initialize();
     LOG(31415, "DelayedDealer", "DelayedDealer initialized by server.");
     return (TRUE);
 }
@@ -77,8 +77,8 @@ void APIENTRY MtSrvCleanup() {
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvPluginCfgAdd(const PluginCfg* cfg) {
     LOG(31415, "DelayedDealer", "MtSrvPluginCfgAdd name=%s, value=%s.", cfg->name, cfg->value);
-    int res = ExtConfig.Add(cfg);
-    ExtProcessor.Reinitialize();
+    int res = Factory::GetConfig()->Add(cfg);
+    Factory::GetProcessor()->Reinitialize();
     return (res);
 }
 //+------------------------------------------------------------------+
@@ -86,8 +86,8 @@ int APIENTRY MtSrvPluginCfgAdd(const PluginCfg* cfg) {
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvPluginCfgSet(const PluginCfg* values, const int total) {
     LOG(31415, "DelayedDealer", "MtSrvPluginCfgSet total = %d.", total);
-    int res = ExtConfig.Set(values, total);
-    ExtProcessor.Reinitialize();
+    int res = Factory::GetConfig()->Set(values, total);
+    Factory::GetProcessor()->Reinitialize();
     return (res);
 }
 //+------------------------------------------------------------------+
@@ -95,8 +95,8 @@ int APIENTRY MtSrvPluginCfgSet(const PluginCfg* values, const int total) {
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvPluginCfgDelete(LPCSTR name) {
     LOG(31415, "DelayedDealer", "MtSrvPluginCfgDelete %s.", name);
-    int res = ExtConfig.Delete(name);
-    ExtProcessor.Reinitialize();
+    int res = Factory::GetConfig()->Delete(name);
+    Factory::GetProcessor()->Reinitialize();
     return (res);
 }
 //+------------------------------------------------------------------+
@@ -104,21 +104,21 @@ int APIENTRY MtSrvPluginCfgDelete(LPCSTR name) {
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvPluginCfgGet(LPCSTR name, PluginCfg* cfg) {
     LOG(31415, "DelayedDealer", "MtSrvPluginCfgGet name=%s.", name);
-    return ExtConfig.Get(name, cfg);
+    return Factory::GetConfig()->Get(name, cfg);
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvPluginCfgNext(const int index, PluginCfg* cfg) {
     LOG(31415, "DelayedDealer", "MtSrvPluginCfgNext index=%d, name=%s, value=%s.", index, cfg->name, cfg->value);
-    return ExtConfig.Next(index, cfg);
+    return Factory::GetConfig()->Next(index, cfg);
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvPluginCfgTotal() {
     LOG(31415, "DelayedDealer", "MtSrvPluginCfgTotal.");
-    return ExtConfig.Total();
+    return Factory::GetConfig()->Total();
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -140,7 +140,7 @@ int APIENTRY MtSrvTradeTransaction(TradeTransInfo* trans, const UserInfo* user, 
 void APIENTRY MtSrvTradeRequestApply(RequestInfo* request, const int isdemo) {
     LOG(31415, "DelayedDealer", "MtSrvTradeRequestApply.");
     if (request != NULL && isdemo == FALSE) {
-        ExtProcessor.ProcessRequest(request);
+        Factory::GetProcessor()->ProcessRequest(request);
     }
     LOG(31415, "DelayedDealer", "MtSrvTradeRequestApply end.");
 }

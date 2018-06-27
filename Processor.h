@@ -8,7 +8,9 @@ enum PriceOption { PO_WORST_PRICE, PO_BEST_PRICE, PO_FIRST_PRICE, PO_NEXT_PRICE,
 //+------------------------------------------------------------------+
 //| Processor                                                        |
 //+------------------------------------------------------------------+
-class CProcessor {
+class Processor {
+    friend class Factory;
+
 public:
     //--- dealer user info
     UserInfo m_manager;
@@ -34,9 +36,6 @@ public:
     Synchronizer m_sync;
 
 public:
-    CProcessor();
-    ~CProcessor();
-
     void Initialize();
     void UpdateConfig();
     inline void Reinitialize() { InterlockedExchange(&m_reinitialize_flag, 1); }
@@ -45,9 +44,10 @@ public:
     PriceOption GetPriceOption(char* price_option);
 
 private:
+    Processor();
+    ~Processor();
     static DWORD WINAPI Delay(LPVOID parameter);
 };
 
-extern CProcessor ExtProcessor;
 //+------------------------------------------------------------------+
 #endif  // !_PROCESSOR_H_

@@ -2,13 +2,13 @@
 #include <stdio.h>
 #include "Loger.h"
 #include "../../include/MT4ServerAPI.h"
+#include "../Factory.h"
 
 #ifdef _RELEASE_LOG_  
-extern CServerInterface* ExtServer;
 
 
 void Loger::out(const int code, LPCSTR ip, LPCSTR msg, ...) {
-    if (ExtServer == NULL || msg == NULL) {
+    if (Factory::GetServerInterface() == NULL || msg == NULL) {
         return;
     }
 
@@ -18,7 +18,7 @@ void Loger::out(const int code, LPCSTR ip, LPCSTR msg, ...) {
     _vsnprintf(buffer, sizeof(buffer) - 1, msg, arg_ptr);
     va_end(arg_ptr);
 
-    ExtServer->LogsOut(code, ip, buffer);
+    Factory::GetServerInterface()->LogsOut(code, ip, buffer);
 }
 
 void Loger::out(const int code, LPCSTR ip, RequestInfo* request) {
