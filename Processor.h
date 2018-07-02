@@ -3,8 +3,6 @@
 
 #include "Config/Config.h"
 
-enum PriceOption { PO_WORST_PRICE, PO_BEST_PRICE, PO_FIRST_PRICE, PO_NEXT_PRICE, PO_ORDER_PRICE };
-
 //+------------------------------------------------------------------+
 //| Processor                                                        |
 //+------------------------------------------------------------------+
@@ -20,7 +18,7 @@ public:
     int m_virtual_dealer_login;
     int m_disable_virtual_dealer;
     int m_enable_comment;
-    int m_update_config;
+    LONG m_update_config;
     int m_enable_tp_slippage;
 
     //--- wp: worst price; bp: best price; fp: first price; np: next price; op: price of order opening
@@ -37,11 +35,10 @@ public:
 
 public:
     void Initialize();
-    void UpdateConfig();
+    void UpdateFileConfig();
     inline void Reinitialize() { InterlockedExchange(&m_reinitialize_flag, 1); }
     void ShowStatus();
     void ProcessRequest(RequestInfo* request);
-    PriceOption GetPriceOption(char* price_option);
 
 private:
     Processor();

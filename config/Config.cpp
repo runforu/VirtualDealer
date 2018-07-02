@@ -2,16 +2,11 @@
 #include "Config.h"
 #include "FileUtil.h"
 
-//Config ExtConfig;
+// Config ExtConfig;
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-Config::Config()
-    : m_cfg(NULL)
-    , m_cfg_total(0)
-    , m_cfg_max(0) {
-    m_filename[0] = 0;
-}
+Config::Config() : m_cfg(NULL), m_cfg_total(0), m_cfg_max(0) { m_filename[0] = 0; }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -33,45 +28,37 @@ void Config::Load(LPCSTR filename) {
     char tmp[MAX_PATH], *cp, *start;
     FileUtil in;
     PluginCfg cfg, *buf;
- 
-    if (filename == NULL)
-        return;
+
+    if (filename == NULL) return;
     //--- copy file name
     m_sync.Lock();
     COPY_STR(m_filename, filename);
     //--- open file
     if (in.Open(m_filename, GENERIC_READ, OPEN_EXISTING)) {
         while (in.GetNextLine(tmp, sizeof(tmp) - 1) > 0) {
-            if (tmp[0] == ';')
-                continue;
+            if (tmp[0] == ';') continue;
             //--- omit white space
             start = tmp;
-            while (*start == ' ')
-                start++;
-            if ((cp = strchr(start, '=')) == NULL)
-                continue;
+            while (*start == ' ') start++;
+            if ((cp = strchr(start, '=')) == NULL) continue;
             *cp = 0;
             //--- copy config name
             ZeroMemory(&cfg, sizeof(cfg));
             COPY_STR(cfg.name, start);
             //--- skip space character
             cp++;
-            while (*cp == ' ')
-                cp++;
+            while (*cp == ' ') cp++;
             COPY_STR(cfg.value, cp);
-         
-            if (cfg.name[0] == 0 || cfg.value[0] == 0)
-                continue;
+
+            if (cfg.name[0] == 0 || cfg.value[0] == 0) continue;
             //--- add
-            if (m_cfg == NULL || m_cfg_total >= m_cfg_max) // place here
+            if (m_cfg == NULL || m_cfg_total >= m_cfg_max)  // place here
             {
                 //--- reallocate memory
-                if ((buf = new PluginCfg[m_cfg_total + 64]) == NULL)
-                    break;
+                if ((buf = new PluginCfg[m_cfg_total + 64]) == NULL) break;
                 //--- copy configs to new memory
                 if (m_cfg != NULL) {
-                    if (m_cfg_total > 0)
-                        memcpy(buf, m_cfg, sizeof(PluginCfg) * m_cfg_total);
+                    if (m_cfg_total > 0) memcpy(buf, m_cfg, sizeof(PluginCfg) * m_cfg_total);
                     delete[] m_cfg;
                 }
                 //--- replace old buffer
@@ -85,8 +72,7 @@ void Config::Load(LPCSTR filename) {
         in.Close();
     }
     //--- sort config by name
-    if (m_cfg != NULL && m_cfg_total > 0)
-        qsort(m_cfg, m_cfg_total, sizeof(PluginCfg), SortByName);
+    if (m_cfg != NULL && m_cfg_total > 0) qsort(m_cfg, m_cfg_total, sizeof(PluginCfg), SortByName);
     m_sync.Unlock();
 }
 //+------------------------------------------------------------------+
@@ -101,10 +87,8 @@ void Config::Save(void) {
         if (out.Open(m_filename, GENERIC_WRITE, CREATE_ALWAYS)) {
             if (m_cfg != NULL)
                 for (int i = 0; i < m_cfg_total; i++) {
-                    _snprintf(tmp, sizeof(tmp) - 1, "%s=%s\n", m_cfg[i].name,
-                              m_cfg[i].value);
-                    if (out.Write(tmp, strlen(tmp)) < 1)
-                        break;
+                    _snprintf(tmp, sizeof(tmp) - 1, "%s=%s\n", m_cfg[i].name, m_cfg[i].value);
+                    if (out.Write(tmp, strlen(tmp)) < 1) break;
                 }
             //--- close file
             out.Close();
@@ -118,8 +102,7 @@ PluginCfg* Config::Search(LPCSTR name) {
     PluginCfg* config = NULL;
 
     if (m_cfg != NULL && m_cfg_total > 0)
-        config = (PluginCfg*)bsearch(name, m_cfg, m_cfg_total, sizeof(PluginCfg),
-                                     SearchByName);
+        config = (PluginCfg*)bsearch(name, m_cfg, m_cfg_total, sizeof(PluginCfg), SearchByName);
 
     return (config);
 }
@@ -128,9 +111,8 @@ PluginCfg* Config::Search(LPCSTR name) {
 //+------------------------------------------------------------------+
 int Config::Add(const PluginCfg* cfg) {
     PluginCfg *config, *buf;
- 
-    if (cfg == NULL || cfg->name[0] == 0)
-        return (FALSE);
+
+    if (cfg == NULL || cfg->name[0] == 0) return (FALSE);
 
     m_sync.Lock();
     if ((config = Search(cfg->name)) != NULL)
@@ -145,8 +127,7 @@ int Config::Add(const PluginCfg* cfg) {
             }
             //--- copy old configs
             if (m_cfg != NULL) {
-                if (m_cfg_total > 0)
-                    memcpy(buf, m_cfg, sizeof(PluginCfg) * m_cfg_total);
+                if (m_cfg_total > 0) memcpy(buf, m_cfg, sizeof(PluginCfg) * m_cfg_total);
                 delete[] m_cfg;
             }
             //--- replace old buf
@@ -168,17 +149,14 @@ int Config::Add(const PluginCfg* cfg) {
 //| Batch set configs                                       |
 //+------------------------------------------------------------------+
 int Config::Set(const PluginCfg* values, const int total) {
- 
-    if (total < 0)
-        return (FALSE);
+    if (total < 0) return (FALSE);
 
     m_sync.Lock();
     if (values != NULL && total > 0) {
         //--- overflow or empty
         if (m_cfg == NULL || total >= m_cfg_max) {
             //--- replace old buffer with new buffer
-            if (m_cfg != NULL)
-                delete[] m_cfg;
+            if (m_cfg != NULL) delete[] m_cfg;
             if ((m_cfg = new PluginCfg[total + 64]) == NULL) {
                 m_cfg_max = m_cfg_total = 0;
                 m_sync.Unlock();
@@ -192,8 +170,7 @@ int Config::Set(const PluginCfg* values, const int total) {
     }
     //--- expose new configs
     m_cfg_total = total;
-    if (m_cfg != NULL && m_cfg_total > 0)
-        qsort(m_cfg, m_cfg_total, sizeof(PluginCfg), SortByName);
+    if (m_cfg != NULL && m_cfg_total > 0) qsort(m_cfg, m_cfg_total, sizeof(PluginCfg), SortByName);
     m_sync.Unlock();
     //--- save to file
     Save();
@@ -206,8 +183,7 @@ int Config::Get(LPCSTR name, PluginCfg* cfg) {
     PluginCfg* config = NULL;
     if (name != NULL && cfg != NULL) {
         m_sync.Lock();
-        if ((config = Search(name)) != NULL)
-            memcpy(cfg, config, sizeof(PluginCfg));
+        if ((config = Search(name)) != NULL) memcpy(cfg, config, sizeof(PluginCfg));
         m_sync.Unlock();
     }
     return (config != NULL);
@@ -237,33 +213,22 @@ int Config::Delete(LPCSTR name) {
         m_sync.Lock();
         if ((config = Search(name)) != NULL) {
             int index = config - m_cfg;
-            if ((index + 1) < m_cfg_total)
-                memmove(config, config + 1,
-                        sizeof(PluginCfg) * (m_cfg_total - index - 1));
+            if ((index + 1) < m_cfg_total) memmove(config, config + 1, sizeof(PluginCfg) * (m_cfg_total - index - 1));
             m_cfg_total--;
         }
         //--- sort
-        if (m_cfg != NULL && m_cfg_total > 0)
-            qsort(m_cfg, m_cfg_total, sizeof(PluginCfg), SortByName);
+        if (m_cfg != NULL && m_cfg_total > 0) qsort(m_cfg, m_cfg_total, sizeof(PluginCfg), SortByName);
         m_sync.Unlock();
     }
     return (config != NULL);
 }
-//+------------------------------------------------------------------+
-//| Sort by name                                                     |
-//+------------------------------------------------------------------+
+
 int Config::SortByName(const void* left, const void* right) {
     return strcmp(((PluginCfg*)left)->name, ((PluginCfg*)right)->name);
 }
-//+------------------------------------------------------------------+
-//| Compare right's name with left |
-//+------------------------------------------------------------------+
-int Config::SearchByName(const void* left, const void* right) {
-    return strcmp((char*)left, ((PluginCfg*)right)->name);
-}
-//+------------------------------------------------------------------+
-//| Obtain integer value form config with "name"                       |
-//+------------------------------------------------------------------+
+
+int Config::SearchByName(const void* left, const void* right) { return strcmp((char*)left, ((PluginCfg*)right)->name); }
+
 int Config::GetInteger(LPCSTR name, int* value, LPCSTR defvalue) {
     PluginCfg* config = NULL;
     if (name != NULL && value != NULL) {
@@ -273,7 +238,7 @@ int Config::GetInteger(LPCSTR name, int* value, LPCSTR defvalue) {
         else if (defvalue != NULL) {
             m_sync.Unlock();
             //--- new config
-            PluginCfg cfg = { 0 };
+            PluginCfg cfg = {0};
             COPY_STR(cfg.name, name);
             COPY_STR(cfg.value, defvalue);
             Add(&cfg);
@@ -286,11 +251,28 @@ int Config::GetInteger(LPCSTR name, int* value, LPCSTR defvalue) {
     //--- return
     return (config != NULL);
 }
-//+------------------------------------------------------------------+
-//| Get string value                                            |
-//+------------------------------------------------------------------+
-int Config::GetString(LPCSTR name, LPTSTR value, const int maxlen,
-                              LPCSTR defvalue) {
+
+int Config::GetLong(LPCSTR name, long* value, LPCSTR defvalue) {
+    PluginCfg* config = NULL;
+    if (name != NULL && value != NULL) {
+        m_sync.Lock();
+        if ((config = Search(name)) != NULL) {
+            *value = atol(config->value);
+        } else if (defvalue != NULL) {
+            m_sync.Unlock();
+            PluginCfg cfg = {0};
+            COPY_STR(cfg.name, name);
+            COPY_STR(cfg.value, defvalue);
+            Add(&cfg);
+            *value = atol(cfg.value);
+            return (TRUE);
+        }
+        m_sync.Unlock();
+    }
+    return (config != NULL);
+}
+
+int Config::GetString(LPCSTR name, LPTSTR value, const int maxlen, LPCSTR defvalue) {
     PluginCfg* config = NULL;
     if (name != NULL && value != NULL) {
         m_sync.Lock();
@@ -300,7 +282,7 @@ int Config::GetString(LPCSTR name, LPTSTR value, const int maxlen,
         } else if (defvalue != NULL) {
             m_sync.Unlock();
             //--- new config
-            PluginCfg cfg = { 0 };
+            PluginCfg cfg = {0};
             COPY_STR(cfg.name, name);
             COPY_STR(cfg.value, defvalue);
             Add(&cfg);
@@ -314,4 +296,4 @@ int Config::GetString(LPCSTR name, LPTSTR value, const int maxlen,
     //--- return
     return (config != NULL);
 }
-//+------------------------------------------------------------------+
+//--- end

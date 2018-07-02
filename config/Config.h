@@ -37,6 +37,7 @@ public:
     }
 
     int GetInteger(LPCSTR name, int* value, LPCSTR defvalue = NULL);
+    int GetLong(LPCSTR name, long* value, LPCSTR defvalue = NULL);
     int GetString(LPCSTR name, LPTSTR value, const int maxlen, LPCSTR defvalue = NULL);
 
 private:

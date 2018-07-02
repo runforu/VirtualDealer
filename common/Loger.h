@@ -10,6 +10,10 @@ public:
     static void out(const int code, LPCSTR ip, LPCSTR msg, ...);
     static void out(const int code, LPCSTR ip, RequestInfo* request);
     static void out(const int code, LPCSTR ip, TradeTransInfo* transaction);
+    static void out(const int code, LPCSTR ip, UserInfo* user_info);
+    static void out(const int code, LPCSTR ip, ConGroup* con_group);
+    static void out(const int code, LPCSTR ip, ConSymbol* con_symbol);
+    static void out(const int code, LPCSTR ip, TradeRecord* trade_record);
 };
 
 #define LOG(code, ip, format, ...) Loger::out(code, ip, format, ##__VA_ARGS__);

@@ -2,7 +2,7 @@
 #define _COMMON_H_
 
 #define TERMINATE_STR(str) str[sizeof(str)-1]=0;
-#define COPY_STR(dst,src) { strncpy(dst,src,sizeof(dst)-1); dst[sizeof(dst)-1]=0; }
+#define COPY_STR(dst,src) { strncpy_s(dst,src,sizeof(dst)-1); dst[sizeof(dst)-1]=0; }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
