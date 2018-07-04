@@ -63,7 +63,7 @@ int APIENTRY MtSrvStartup(CServerInterface* server) {
 
     //--- initialize dealer helper
     Factory::GetProcessor()->Initialize();
-    LOG(31415, "VirtualDealer", "VirtualDealer initialized by server.");
+    LOG("VirtualDealer initialized by server.");
     return (TRUE);
 }
 //+------------------------------------------------------------------+
@@ -76,7 +76,7 @@ void APIENTRY MtSrvCleanup() {
 //| Standard configuration functions                                 |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvPluginCfgAdd(const PluginCfg* cfg) {
-    LOG(31415, "VirtualDealer", "MtSrvPluginCfgAdd name=%s, value=%s.", cfg->name, cfg->value);
+    LOG("MtSrvPluginCfgAdd name=%s, value=%s.", cfg->name, cfg->value);
     int res = Factory::GetConfig()->Add(cfg);
     Factory::GetProcessor()->Reinitialize();
     return (res);
@@ -85,7 +85,7 @@ int APIENTRY MtSrvPluginCfgAdd(const PluginCfg* cfg) {
 //|                                                                  |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvPluginCfgSet(const PluginCfg* values, const int total) {
-    LOG(31415, "VirtualDealer", "MtSrvPluginCfgSet total = %d.", total);
+    LOG("MtSrvPluginCfgSet total = %d.", total);
     int res = Factory::GetConfig()->Set(values, total);
     Factory::GetProcessor()->Reinitialize();
     return (res);
@@ -94,7 +94,7 @@ int APIENTRY MtSrvPluginCfgSet(const PluginCfg* values, const int total) {
 //|                                                                  |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvPluginCfgDelete(LPCSTR name) {
-    LOG(31415, "VirtualDealer", "MtSrvPluginCfgDelete %s.", name);
+    LOG("MtSrvPluginCfgDelete %s.", name);
     int res = Factory::GetConfig()->Delete(name);
     Factory::GetProcessor()->Reinitialize();
     return (res);
@@ -103,52 +103,52 @@ int APIENTRY MtSrvPluginCfgDelete(LPCSTR name) {
 //|                                                                  |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvPluginCfgGet(LPCSTR name, PluginCfg* cfg) {
-    LOG(31415, "VirtualDealer", "MtSrvPluginCfgGet name=%s.", name);
+    LOG("MtSrvPluginCfgGet name=%s.", name);
     return Factory::GetConfig()->Get(name, cfg);
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvPluginCfgNext(const int index, PluginCfg* cfg) {
-    LOG(31415, "VirtualDealer", "MtSrvPluginCfgNext index=%d, name=%s, value=%s.", index, cfg->name, cfg->value);
+    LOG("MtSrvPluginCfgNext index=%d, name=%s, value=%s.", index, cfg->name, cfg->value);
     return Factory::GetConfig()->Next(index, cfg);
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvPluginCfgTotal() {
-    LOG(31415, "VirtualDealer", "MtSrvPluginCfgTotal.");
+    LOG("MtSrvPluginCfgTotal.");
     return Factory::GetConfig()->Total();
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvTradeRequestFilter(RequestInfo* request, const int isdemo) {
-    LOG(31415, "VirtualDealer", "MtSrvTradeRequestFilter.");
+    LOG("MtSrvTradeRequestFilter.");
     return RET_OK;
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvTradeTransaction(TradeTransInfo* trans, const UserInfo* user, int* request_id) {
-    LOG(31415, "VirtualDealer", "MtSrvTradeTransaction.");
+    LOG("MtSrvTradeTransaction.");
     return RET_OK;
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 void APIENTRY MtSrvTradeRequestApply(RequestInfo* request, const int isdemo) {
-    LOG(31415, "VirtualDealer", "MtSrvTradeRequestApply.");
+    LOG("MtSrvTradeRequestApply.");
     if (request != NULL && isdemo == FALSE) {
         Factory::GetProcessor()->ProcessRequest(request);
     }
-    LOG(31415, "VirtualDealer", "MtSrvTradeRequestApply end.");
+    LOG("MtSrvTradeRequestApply end.");
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvTradeStopsFilter(const ConGroup* group, const ConSymbol* symbol, const TradeRecord* trade) {
-    LOG(31415, "VirtualDealer", "MtSrvTradeStopsFilter.");
+    LOG("MtSrvTradeStopsFilter.");
     return RET_OK;
 }
 //+------------------------------------------------------------------+
@@ -156,14 +156,24 @@ int APIENTRY MtSrvTradeStopsFilter(const ConGroup* group, const ConSymbol* symbo
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvTradeStopsApply(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol, TradeRecord* trade,
                                   const int isTP) {
-    LOG(31415, "VirtualDealer", "MtSrvTradeStopsApply.");
-    return RET_OK;
+    LOG("MtSrvTradeStopsApply.");
+    LOG_INFO(user);
+    LOG_INFO(group);
+    LOG_INFO(symbol);
+    LOG_INFO(trade);
+    // Here, delay tp sl
+    if (Factory::GetProcessor()->AllowSLTP(user, group, symbol, trade, isTP)) {
+        // activate tp/sl
+        return RET_OK;
+    }
+    // not activate tp/sl
+    return RET_OK_NONE;
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvTradePendingsFilter(const ConGroup* group, const ConSymbol* symbol, const TradeRecord* trade) {
-    LOG(31415, "VirtualDealer", "MtSrvTradePendingsFilter.");
+    LOG("MtSrvTradePendingsFilter. order = %d", trade->order);
     return RET_OK;
 }
 //+------------------------------------------------------------------+
@@ -171,15 +181,26 @@ int APIENTRY MtSrvTradePendingsFilter(const ConGroup* group, const ConSymbol* sy
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvTradePendingsApply(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol,
                                      const TradeRecord* pending, TradeRecord* trade) {
-    LOG(31415, "VirtualDealer", "MtSrvTradePendingsApply.");
-    return RET_OK;
+    LOG("MtSrvTradePendingsApply.");
+    LOG_INFO(user);
+    LOG_INFO(group);
+    LOG_INFO(symbol);
+    LOG_INFO(pending);
+    LOG_INFO(trade);
+    // Here, delay activation
+    if (Factory::GetProcessor()->ActivatePendingOrder(user, group, symbol, pending, trade)) {
+        // activate order
+        return RET_OK;
+    }
+    // not activate order
+    return RET_OK_NONE;
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvTradeStopoutsFilter(const ConGroup* group, const ConSymbol* symbol, const int login, const double equity,
                                       const double margin) {
-    LOG(31415, "VirtualDealer", "MtSrvTradeStopoutsFilter.");
+    LOG("MtSrvTradeStopoutsFilter.");
     return RET_OK;
 }
 //+------------------------------------------------------------------+
@@ -187,18 +208,23 @@ int APIENTRY MtSrvTradeStopoutsFilter(const ConGroup* group, const ConSymbol* sy
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvTradeStopoutsApply(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol,
                                      TradeRecord* stopout) {
-    LOG(31415, "VirtualDealer", "MtSrvTradeStopoutsApply.");
+    LOG("MtSrvTradeStopoutsApply. order = %d", stopout->order);
+    LOG_INFO(user);
+    LOG_INFO(group);
+    LOG_INFO(symbol);
+    LOG_INFO(stopout);
+    // Here, set user's balance to zero
     return RET_OK;
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 void APIENTRY MtSrvTradesAddExt(TradeRecord* trade, const UserInfo* user, const ConSymbol* symb, const int mode) {
-    LOG(31415, "VirtualDealer", "MtSrvTradesAddExt.");
+    LOG("MtSrvTradesAddExt.");
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
 /**/
 void APIENTRY MtSrvTradesUpdate(TradeRecord* trade, UserInfo* user, const int mode) {
-    LOG(31415, "VirtualDealer", "MtSrvTradesUpdate.");
+    LOG("MtSrvTradesUpdate.");
 }

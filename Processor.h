@@ -3,9 +3,12 @@
 
 #include "Config/Config.h"
 
-//+------------------------------------------------------------------+
-//| Processor                                                        |
-//+------------------------------------------------------------------+
+struct DelayedOrder {
+    int order;
+    time_t m_firt_hit;
+    double m_worst_price[2];
+};
+
 class Processor {
     friend class Factory;
 
@@ -26,6 +29,15 @@ public:
     char m_group[256];
     char m_symbols[256];
 
+    //--- delay activation of pending order
+    DelayedOrder m_pending_order[256];
+
+    //--- delay stop loss
+    DelayedOrder m_stop_loss[256];
+
+    //--- delay take profit
+    DelayedOrder m_take_profit[256];
+
     //--- statistics
     LONG m_reinitialize_flag;
     int m_requests_total;
@@ -39,6 +51,9 @@ public:
     inline void Reinitialize() { InterlockedExchange(&m_reinitialize_flag, 1); }
     void ShowStatus();
     void ProcessRequest(RequestInfo* request);
+    bool ActivatePendingOrder(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol, const TradeRecord* pending,
+                              TradeRecord* trade);
+    bool AllowSLTP(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol, TradeRecord* trade, const int isTP);
 
 private:
     Processor();

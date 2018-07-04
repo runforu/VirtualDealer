@@ -65,7 +65,7 @@ void Processor::ShowStatus() {
     if (Factory::GetServerInterface() != NULL && m_requests_total > 0) {
         //--- this line is used by the Log Analyser in order to calculate the requests
         //--- processed by the Helper, this is why it is not recommended to modify it
-        LOG(31415, "VirtualDealer", "'%d': %d of %d requests processed (%.2lf%%)", m_manager.login, m_requests_processed,
+        LOG("'%d': %d of %d requests processed (%.2lf%%)", m_manager.login, m_requests_processed,
             m_requests_total, m_requests_processed * 100.0 / m_requests_total);
     }
 }
@@ -78,20 +78,20 @@ DWORD WINAPI Processor::Delay(LPVOID parameter) {
     }
 
     RequestHelper* requestHelper = (RequestHelper*)parameter;
-    LOG(31415, "VirtualDealer", "In delayed thread, request id = %d; thread id = %d.", requestHelper->m_request_info->id,
+    LOG("In delayed thread, request id = %d; thread id = %d.", requestHelper->m_request_info->id,
         GetCurrentThreadId());
 
     Sleep(requestHelper->m_delay_milisecond);
 
     Factory::GetServerInterface()->RequestsFree(requestHelper->m_request_info->id, Factory::GetProcessor()->m_manager.login);
-    double prices[2] = {0};
+    double prices[2] = {0};  // Factory::GetServerInterface()->HistoryTicksGet()
     Factory::GetServerInterface()->HistoryPricesGroup(requestHelper->m_request_info, prices);
     Factory::GetServerInterface()->RequestsConfirm(requestHelper->m_request_info->id, &Factory::GetProcessor()->m_manager,
                                                    prices);
 
     delete requestHelper;
 
-    LOG(31415, "VirtualDealer", "In delayed thread, Request freed thread.");
+    LOG("In delayed thread, Request freed thread.");
     return 0;
 }
 //+------------------------------------------------------------------+
@@ -102,8 +102,8 @@ void Processor::ProcessRequest(RequestInfo* request) {
         return;
     }
 
-    LOG_INFO(31415, "VirtualDealer", request);
-    LOG_INFO(31415, "VirtualDealer", &request->trade);
+    LOG_INFO(request);
+    LOG_INFO(&request->trade);
     double prices[2] = {1, 1};
     Factory::GetServerInterface()->RequestsConfirm(request->id, &Factory::GetProcessor()->m_manager, prices);
     return;
@@ -119,20 +119,20 @@ void Processor::ProcessRequest(RequestInfo* request) {
 
     //--- plugin disabled
     if (m_disable_virtual_dealer == 1) {
-        LOG(31415, "VirtualDealer", "m_disable_virtual_dealer == 1.");
+        LOG("m_disable_virtual_dealer == 1.");
         return;
     }
 
     //--- global group check
     if (strcmp(m_group, "*") != 0 && strstr(m_group, request->group) == NULL) {
-        LOG(31415, "VirtualDealer", "group check");
+        LOG("group check");
         return;
     }
 
     //--- global symbol check
     TradeTransInfo* trans = &request->trade;
     if (strcmp(m_symbols, "*") != 0 && strstr(m_symbols, trans->symbol) == NULL) {
-        LOG(31415, "VirtualDealer", "symbol check");
+        LOG("symbol check");
         return;
     }
 
@@ -143,15 +143,6 @@ void Processor::ProcessRequest(RequestInfo* request) {
     request_helper->m_delay_milisecond = m_delay_milisecond;
 
     //--- apply cfg file config
-    ExternalConfig ec;
-    ExecutionType et = ET_NONE;
-
-    if (trans->type == TT_ORDER_MK_OPEN || trans->type == TT_ORDER_MK_CLOSE) {
-        et = ET_MARKET;
-    } else if (trans->type == TT_ORDER_IE_OPEN || trans->type == TT_ORDER_IE_CLOSE) {
-        et = ET_ASKING;
-    }
-
     int order_type = OT_NONE;
     if (trans->cmd == TT_ORDER_REQ_OPEN || trans->cmd == TT_ORDER_MK_OPEN || trans->cmd == TT_ORDER_REQ_OPEN) {
         order_type |= OT_OPEN;
@@ -166,18 +157,29 @@ void Processor::ProcessRequest(RequestInfo* request) {
         order_type |= OT_SL;
     }
 
-    if (Factory::GetFileConfig()->Search(et, trans->symbol, request->group, request->login, trans->volume, order_type, &ec)) {
+    ExternalConfig ec;
+    if (Factory::GetFileConfig()->Search(trans->symbol, request->group, request->login, trans->volume, order_type, &ec)) {
         request_helper->m_price_option = ec.m_price_option;
         request_helper->m_delay_milisecond = ec.m_delay_milisecond;
-    } 
+    }
 
     Factory::GetServerInterface()->RequestsLock(request->id, m_manager.login);
-    LOG(31415, "VirtualDealer", "In main thread, Request locked.");
+    LOG("In main thread, Request locked.");
 
     HANDLE hThread = CreateThread(NULL, 0, Processor::Delay, (LPVOID)request_helper, 0, NULL);
     m_requests_total++;
 }
-//+------------------------------------------------------------------+
-//| Update config                                               |
-//+------------------------------------------------------------------+
+
+bool Processor::ActivatePendingOrder(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol,
+                                     const TradeRecord* pending, TradeRecord* trade) {
+    // modify the price of trade
+    return true;
+}
+
+bool Processor::AllowSLTP(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol, TradeRecord* trade,
+                          const int isTP) {
+    // modify the price of trade
+    return true;
+}
+
 void Processor::UpdateFileConfig() { Factory::GetFileConfig()->Load(); }

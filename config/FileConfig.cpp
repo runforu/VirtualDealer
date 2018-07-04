@@ -51,23 +51,8 @@ void FileConfig::Load() {
             continue;
         }
 
-        if ((cp = strchr(start, ';')) == NULL) {
-            continue;
-        }
-        *cp = 0;
-
-        //--- execution type
-        // COPY_STR(m_config[m_config_total].m_execution, start);
-        ExecutionType et;
-        if (ToExecutionType(start, &et, ET_ALL)) {
-            m_config[m_config_total].m_execution_type = et;
-        } else {
-            continue;
-        }
-
         //--- copy symbol
-        cp++;
-        start = cp;
+        cp= start;
         if ((cp = strchr(cp, ';')) == NULL) {
             continue;
         }
@@ -188,26 +173,6 @@ PriceOption FileConfig::ToPriceOption(char* price_option) {
     return PO_WORST_PRICE;
 }
 
-bool FileConfig::ToExecutionType(char* type, ExecutionType* execution_type, ExecutionType default_value) {
-    if (type == NULL || strlen(type) == 0) {
-        *execution_type = default_value;
-        return true;
-    }
-    if (strcmp(type, "*") == 0) {
-        *execution_type = ET_ALL;
-        return true;
-    }
-    if (strcmp(type, "market") == 0) {
-        *execution_type = ET_MARKET;
-        return true;
-    }
-    if (strcmp(type, "asking") == 0) {
-        *execution_type = ET_ASKING;
-        return true;
-    }
-    return false;
-}
-
 int FileConfig::ToOrderType(char* type, int default_value) {
     if (type == NULL || strlen(type) == 0) {
         return default_value;
@@ -252,7 +217,7 @@ int FileConfig::CStrToInt(char* string) {
     return 0;
 }
 
-bool FileConfig::Search(ExecutionType execution_type, const char* symbol, const char* group, int client_login, int volume,
+bool FileConfig::Search(const char* symbol, const char* group, int client_login, int volume,
                         int order_type, ExternalConfig* external_config) {
     for (int i = 0; i < m_config_total; i++) {
         if (strcmp(symbol, this->m_config[i].m_symbol) != 0) {
@@ -280,11 +245,7 @@ bool FileConfig::Search(ExecutionType execution_type, const char* symbol, const 
         if (order_type != OT_NONE && (order_type & this->m_config[i].m_order_type) == 0) {
             continue;
         }
-        if (execution_type != ET_NONE && this->m_config[i].m_execution_type != ET_ALL) {
-            if (this->m_config[i].m_execution_type != execution_type) {
-                continue;
-            }
-        }
+
         // find the fist file config
         *external_config = this->m_config[i];
         return true;
