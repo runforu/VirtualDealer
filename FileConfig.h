@@ -4,8 +4,8 @@
 #include <time.h>
 #include <windows.h>
 
-#include "../Synchronizer.h"
-#include "../common/common.h"
+#include "Synchronizer.h"
+#include "common.h"
 
 #define MAX_CONFIG 32
 
@@ -16,7 +16,6 @@ enum OrderType {
     OT_CLOSE = 0x02,
     OT_TP = 0x04,
     OT_SL = 0x08,
-    OT_PENDING = 0X10,
     OT_ALL = 0x0F,
 };
 

@@ -2,7 +2,7 @@
 #define _LOGER_H_
 
 #include <windows.h>
-#include "../../include/MT4ServerAPI.h"
+#include "../include/MT4ServerAPI.h"
 #ifdef _RELEASE_LOG_
 #define _CODE_ 31415
 #define _IP_ "VirtualDealer"
@@ -15,6 +15,7 @@ public:
     static void out(const int code, LPCSTR ip, const ConGroup* con_group);
     static void out(const int code, LPCSTR ip, const ConSymbol* con_symbol);
     static void out(const int code, LPCSTR ip, const TradeRecord* trade_record);
+    static void out(const int code, LPCSTR ip, const TickAPI* tick);
 };
 
 #define LOG(format, ...) Loger::out(_CODE_, _IP_, format, ##__VA_ARGS__);

@@ -4,8 +4,8 @@
 #include <windows.h>
 #include "Processor.h"
 #include "Synchronizer.h"
-#include "config/Config.h"
-#include "config/FileConfig.h"
+#include "Config.h"
+#include "FileConfig.h"
 
 class Factory {
 private:

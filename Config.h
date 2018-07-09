@@ -3,9 +3,9 @@
 
 #include <time.h>
 #include <windows.h>
-#include "../../include/MT4ServerAPI.h"
-#include "../Synchronizer.h"
-#include "../common/common.h"
+#include "../include/MT4ServerAPI.h"
+#include "Synchronizer.h"
+#include "common.h"
 
 //+------------------------------------------------------------------+
 //| Simple configuration                                             |

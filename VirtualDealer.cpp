@@ -1,7 +1,7 @@
-#include "Config/Config.h"
+#include "Config.h"
 #include "Factory.h"
 #include "Processor.h"
-#include "common/Loger.h"
+#include "Loger.h"
 
 PluginInfo ExtPluginInfo = {"Virtual Dealer", 1, "Moa International.", {0}};
 
@@ -151,9 +151,7 @@ int APIENTRY MtSrvTradeStopsFilter(const ConGroup* group, const ConSymbol* symbo
     LOG("MtSrvTradeStopsFilter.");
     return RET_OK;
 }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
+
 int APIENTRY MtSrvTradeStopsApply(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol, TradeRecord* trade,
                                   const int isTP) {
     LOG("MtSrvTradeStopsApply.");
@@ -169,16 +167,13 @@ int APIENTRY MtSrvTradeStopsApply(const UserInfo* user, const ConGroup* group, c
     // not activate tp/sl
     return RET_OK_NONE;
 }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
+
 int APIENTRY MtSrvTradePendingsFilter(const ConGroup* group, const ConSymbol* symbol, const TradeRecord* trade) {
     LOG("MtSrvTradePendingsFilter. order = %d", trade->order);
+    LOG("----------------------------------symbol->spread =  %d", symbol->spread);
     return RET_OK;
 }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
+
 int APIENTRY MtSrvTradePendingsApply(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol,
                                      const TradeRecord* pending, TradeRecord* trade) {
     LOG("MtSrvTradePendingsApply.");
@@ -187,6 +182,9 @@ int APIENTRY MtSrvTradePendingsApply(const UserInfo* user, const ConGroup* group
     LOG_INFO(symbol);
     LOG_INFO(pending);
     LOG_INFO(trade);
+    
+    LOG("----------------------------------symbol->spread =  %d", symbol->spread);
+
     // Here, delay activation
     if (Factory::GetProcessor()->ActivatePendingOrder(user, group, symbol, pending, trade)) {
         // activate order
@@ -195,17 +193,13 @@ int APIENTRY MtSrvTradePendingsApply(const UserInfo* user, const ConGroup* group
     // not activate order
     return RET_OK_NONE;
 }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
+
 int APIENTRY MtSrvTradeStopoutsFilter(const ConGroup* group, const ConSymbol* symbol, const int login, const double equity,
                                       const double margin) {
     LOG("MtSrvTradeStopoutsFilter.");
     return RET_OK;
 }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
+
 int APIENTRY MtSrvTradeStopoutsApply(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol,
                                      TradeRecord* stopout) {
     LOG("MtSrvTradeStopoutsApply. order = %d", stopout->order);
@@ -216,15 +210,12 @@ int APIENTRY MtSrvTradeStopoutsApply(const UserInfo* user, const ConGroup* group
     // Here, set user's balance to zero
     return RET_OK;
 }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
+
+
 void APIENTRY MtSrvTradesAddExt(TradeRecord* trade, const UserInfo* user, const ConSymbol* symb, const int mode) {
     LOG("MtSrvTradesAddExt.");
 }
-//+------------------------------------------------------------------+
-//|                                                                  |
-/**/
-void APIENTRY MtSrvTradesUpdate(TradeRecord* trade, UserInfo* user, const int mode) {
-    LOG("MtSrvTradesUpdate.");
-}
+
+void APIENTRY MtSrvTradesUpdate(TradeRecord* trade, UserInfo* user, const int mode) { LOG("MtSrvTradesUpdate."); }
+
+void APIENTRY MtSrvHistoryTickApply(const ConSymbol* symbol, FeedTick* inf) { Factory::GetProcessor()->TickApply(symbol, inf); }

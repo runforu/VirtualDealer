@@ -1,7 +1,11 @@
 #ifndef _PROCESSOR_H_
 #define _PROCESSOR_H_
 
-#include "Config/Config.h"
+#include "Config.h"
+#include "TickHistory.h"
+#include "FileConfig.h"
+
+#define TIME_ZONE_DIFF 10800
 
 struct DelayedOrder {
     int order;
@@ -9,10 +13,17 @@ struct DelayedOrder {
     double m_worst_price[2];
 };
 
+struct RequestHelper {
+    RequestInfo* m_request_info;
+    PriceOption m_price_option;
+    time_t m_start_time;
+    int m_delay_milisecond;
+};
+
 class Processor {
     friend class Factory;
 
-public:
+private:
     //--- dealer user info
     UserInfo m_manager;
 
@@ -26,17 +37,10 @@ public:
 
     //--- wp: worst price; bp: best price; fp: first price; np: next price; op: price of order opening
     char m_price_option[4];
-    char m_group[256];
-    char m_symbols[256];
+    char m_group[32];
+    char m_symbols[32];
 
-    //--- delay activation of pending order
-    DelayedOrder m_pending_order[256];
-
-    //--- delay stop loss
-    DelayedOrder m_stop_loss[256];
-
-    //--- delay take profit
-    DelayedOrder m_take_profit[256];
+    TickHistory m_tick_history;
 
     //--- statistics
     LONG m_reinitialize_flag;
@@ -54,11 +58,31 @@ public:
     bool ActivatePendingOrder(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol, const TradeRecord* pending,
                               TradeRecord* trade);
     bool AllowSLTP(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol, TradeRecord* trade, const int isTP);
+    void TickApply(const ConSymbol* symbol, FeedTick* tick);
+
+    inline void Lock() { m_sync.Lock(); }
+    inline void Unlock() { m_sync.Unlock(); }
+
+    void GetPrice(RequestHelper* helper, double* prices);
 
 private:
     Processor();
     ~Processor();
+
+    static int GetSpreadDiff(RequestInfo* request);
+    static int GetSpreadDiff(char* group);
     static DWORD WINAPI Delay(LPVOID parameter);
+    static bool  SpreadDiff(char* group, char* symbol, TickAPI * tick);
+
+private:  // TODO
+    //--- delay activation of pending order
+    DelayedOrder m_pending_order[256];
+
+    //--- delay stop loss
+    DelayedOrder m_stop_loss[256];
+
+    //--- delay take profit
+    DelayedOrder m_take_profit[256];
 };
 
 //+------------------------------------------------------------------+

@@ -96,6 +96,11 @@ void Loger::out(const int code, LPCSTR ip, const ConSymbol* con_symbol) {
 void Loger::out(const int code, LPCSTR ip, const ConGroup* con_group) {
     Loger::out(code, ip, "ConGroup: [ group = %s ].", con_group->group);
 }
+
+void Loger::out(const int code, LPCSTR ip, const TickAPI* tick) {
+    Loger::out(code, ip, "TickAPI: [ time = %d, bid = %f, ask = %f ].", tick->ctm, tick->bid, tick->ask);
+}
+
 void Loger::out(const int code, LPCSTR ip, const TradeRecord* trade_record) {
     Loger::out(code, ip,
                "                TradeRecord: [\n"

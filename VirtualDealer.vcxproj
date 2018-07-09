@@ -174,24 +174,26 @@
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="common\common.cpp" />
-    <ClCompile Include="common\Loger.cpp" />
-    <ClCompile Include="config\Config.cpp" />
-    <ClCompile Include="config\FileUtil.cpp" />
-    <ClCompile Include="config\FileConfig.cpp" />
+    <ClCompile Include="common.cpp" />
+    <ClCompile Include="Config.cpp" />
+    <ClCompile Include="FileConfig.cpp" />
+    <ClCompile Include="FileUtil.cpp" />
+    <ClCompile Include="Loger.cpp" />
+    <ClCompile Include="TickHistory.cpp" />
     <ClCompile Include="VirtualDealer.cpp" />
     <ClCompile Include="Factory.cpp" />
     <ClCompile Include="Processor.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="common\common.h" />
-    <ClInclude Include="common\Loger.h" />
-    <ClInclude Include="config\Config.h" />
-    <ClInclude Include="config\FileUtil.h" />
-    <ClInclude Include="config\FileConfig.h" />
+    <ClInclude Include="common.h" />
+    <ClInclude Include="Config.h" />
     <ClInclude Include="Factory.h" />
+    <ClInclude Include="FileConfig.h" />
+    <ClInclude Include="FileUtil.h" />
+    <ClInclude Include="Loger.h" />
     <ClInclude Include="Processor.h" />
     <ClInclude Include="Synchronizer.h" />
+    <ClInclude Include="TickHistory.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="VirtualDealer.def" />
