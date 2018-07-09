@@ -1,12 +1,8 @@
 #include <windows.h>
+#include "common.h"
 
-//+------------------------------------------------------------------+
-//| Contants                                                         |
-//+------------------------------------------------------------------+
 static const double ExtDecimalArray[9] = {1.0, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, 10000000.0, 100000000.0};
-//+------------------------------------------------------------------+
-//| The normalizer of the price is indicated by taking into account the signs after |
-//+------------------------------------------------------------------+
+
 double __fastcall NormalizeDouble(const double val, int digits) {
     if (digits < 0) digits = 0;
     if (digits > 8) digits = 8;
@@ -14,9 +10,7 @@ double __fastcall NormalizeDouble(const double val, int digits) {
     const double p = ExtDecimalArray[digits];
     return ((val >= 0.0) ? (double(__int64(val * p + 0.5000001)) / p) : (double(__int64(val * p - 0.5000001)) / p));
 }
-//+------------------------------------------------------------------+
-//| Does the string satisfy the sent fragment of the expression    |
-//+------------------------------------------------------------------+
+
 int CheckTemplate(char* expr, char* tok_end, const char* group, char* prev, int* deep) {
     char tmp = 0;
     char *lastwc, *prev_tok;
@@ -55,9 +49,7 @@ int CheckTemplate(char* expr, char* tok_end, const char* group, char* prev, int*
     if (lastwc != tok_end) return CheckTemplate(lastwc, tok_end, group, prev, deep);
     return (TRUE);
 }
-//+------------------------------------------------------------------+
-//| Does the group satisfy one of the templates                    |
-//+------------------------------------------------------------------+
+
 int CheckGroup(char* grouplist, const char* group) {
     if (grouplist == NULL || group == NULL) return (FALSE);
     //--- go through all the groups
@@ -113,9 +105,7 @@ int CheckGroup(char* grouplist, const char* group) {
 
     return (FALSE);
 }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
+
 double DecPow(const int digits) {
     static double decarray[9] = {1.0, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, 10000000.0, 100000000.0};
 
@@ -123,4 +113,55 @@ double DecPow(const int digits) {
 
     return decarray[digits];
 }
-//+------------------------------------------------------------------+
+
+int CStrToInt(char* string) {
+    if (string != NULL) {
+        return atoi(string);
+    }
+    return 0;
+}
+
+
+char* RemoveWhiteChar(char* str) {
+    char *pend = str, *pch = str;
+    while (*pch != 0) {
+        if (isspace(*pch)) {
+            pch++;
+            continue;
+        }
+        if (pend != pch) {
+            *pend = *pch;
+        }
+        pend++;
+        pch++;
+    }
+    return str;
+}
+
+char* StrRange(char* str, const char begin, const char end, char** buf) {
+    char* cp = str == NULL ? *buf : str;
+    if (cp == NULL) {
+        return NULL;
+    }
+    if (*cp == 0) {
+        return NULL;
+    }
+    *buf = NULL;
+
+    if ((cp = strchr(cp, begin)) == NULL) {
+        return NULL;
+    }
+    cp++;
+    char* result = cp;
+
+    if ((cp = strchr(cp, end)) == NULL) {
+        return NULL;
+    }
+    *cp = 0;
+    cp++;
+    if (strchr(result, begin) == NULL) {
+        *buf = cp;
+        return result;
+    }
+    return NULL;
+}

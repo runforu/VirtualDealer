@@ -10,6 +10,7 @@
 #define MAX_CONFIG 32
 
 enum PriceOption { PO_WORST_PRICE = 0, PO_BEST_PRICE, PO_FIRST_PRICE, PO_NEXT_PRICE, PO_ORDER_PRICE };
+
 enum OrderType {
     OT_NONE = 0,
     OT_OPEN = 0x01,
@@ -20,21 +21,21 @@ enum OrderType {
 };
 
 struct ExternalConfig {
-    char m_symbol[32];
-    char m_group[32];
-    char m_login[32];
-    // char m_min_volume[32];
+    char m_symbol[12];
+    char m_group[16];
+    char m_login[16];
     int m_min_volume;
-    // char m_max_volume[32];
     int m_max_volume;
-    // char m_order_type[32];
     // combination of "open", "close", "tp", "sl", "pending"; otherwise, "*"
     int m_order_type;
-    // char m_delay_milisecond[24];
     int m_delay_milisecond;
-    // char m_price_option[8];
     // one of "wp", "bp", "np", "fp", "op"
     PriceOption m_price_option;
+
+public:
+   static bool ParseConfig(char* line, ExternalConfig * external_config);
+   static PriceOption ToPriceOption(char* price_option);
+   static int ToOrderType(char* type, int default_value);
 };
 
 class FileConfig {
@@ -43,11 +44,10 @@ class FileConfig {
 public:
     void SetCfgFile(LPCSTR filename);
     void Load();
+    //bool ParseConfig(char* line, ExternalConfig * external_config);
     bool Search(const char* symbol, const char* group, int client_login, int volume, int order_type,
                 ExternalConfig* external_config);
-    static PriceOption ToPriceOption(char* price_option);
-    static int ToOrderType(char* type, int default_value);
-    static int CStrToInt(char* string);
+
 
 //private:
     Synchronizer m_sync;                  // synchronizer

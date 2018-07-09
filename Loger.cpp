@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <time.h>
-#include "../Factory.h"
+#include "Factory.h"
 #include "Loger.h"
 
 #ifdef _RELEASE_LOG_

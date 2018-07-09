@@ -52,7 +52,7 @@ void FileConfig::Load() {
         }
 
         //--- copy symbol
-        cp= start;
+        cp = start;
         if ((cp = strchr(cp, ';')) == NULL) {
             continue;
         }
@@ -122,7 +122,7 @@ void FileConfig::Load() {
             continue;
         }
         *cp = 0;
-        m_config[m_config_total].m_order_type = ToOrderType(start, OT_ALL);
+        m_config[m_config_total].m_order_type = ExternalConfig::ToOrderType(start, OT_ALL);
 
         //--- copy delay_milisecond
         cp++;
@@ -143,7 +143,7 @@ void FileConfig::Load() {
             continue;
         }
         *cp = 0;
-        m_config[m_config_total].m_price_option = ToPriceOption(start);
+        m_config[m_config_total].m_price_option = ExternalConfig::ToPriceOption(start);
 
         m_config_total++;
         if (m_config_total >= MAX_CONFIG) {
@@ -154,7 +154,68 @@ void FileConfig::Load() {
     m_sync.Unlock();
 }
 
-PriceOption FileConfig::ToPriceOption(char* price_option) {
+bool ExternalConfig::ParseConfig(char* line, ExternalConfig* external_config) {
+    if (line == NULL || external_config == NULL) {
+        return false;
+    }
+
+    char buf[256], *cp;
+
+    ZeroMemory(external_config, sizeof(ExternalConfig));
+
+    COPY_STR(buf, line);
+    RemoveWhiteChar(buf);
+
+    //--- copy symbol
+    char* pchar = StrRange(buf, '<', '>', &cp);
+    if (strlen(pchar) != 0) {
+        COPY_STR(external_config->m_symbol, pchar);
+    }
+
+    //--- copy group
+    pchar = StrRange(NULL, '<', '>', &cp);
+    if (strlen(pchar) != 0) {
+        COPY_STR(external_config->m_group, pchar);
+    }
+
+    //--- copy login
+    pchar = StrRange(NULL, '<', '>', &cp);
+    if (strlen(pchar) != 0) {
+        COPY_STR(external_config->m_login, pchar);
+    }
+
+    //--- copy min_volume
+    pchar = StrRange(NULL, '<', '>', &cp);
+    if (strlen(pchar) != 0) {
+        external_config->m_min_volume = CStrToInt(pchar);
+    } else {
+        external_config->m_min_volume = -1;
+    }
+
+    //--- copy max_volume
+    pchar = StrRange(NULL, '<', '>', &cp);
+    if (strlen(pchar) != 0) {
+        external_config->m_max_volume = CStrToInt(pchar);
+    } else {
+        external_config->m_max_volume = -1;
+    }
+
+    //--- copy order_type
+    pchar = StrRange(NULL, '<', '>', &cp);
+    external_config->m_order_type = ToOrderType(pchar, OT_ALL);
+
+    //--- copy delay_milisecond
+    pchar = StrRange(NULL, '<', '>', &cp);
+    external_config->m_delay_milisecond = CStrToInt(pchar);
+
+    //--- copy price_option
+    pchar = StrRange(NULL, '<', '>', &cp);
+    external_config->m_delay_milisecond = ToPriceOption(pchar);
+
+    return true;
+}
+
+PriceOption ExternalConfig::ToPriceOption(char* price_option) {
     if (price_option == NULL || strlen(price_option) == 0) {
         return PO_WORST_PRICE;
     }
@@ -173,7 +234,7 @@ PriceOption FileConfig::ToPriceOption(char* price_option) {
     return PO_WORST_PRICE;
 }
 
-int FileConfig::ToOrderType(char* type, int default_value) {
+int ExternalConfig::ToOrderType(char* type, int default_value) {
     if (type == NULL || strlen(type) == 0) {
         return default_value;
     }
@@ -210,15 +271,8 @@ int FileConfig::ToOrderType(char* type, int default_value) {
     return mask;
 }
 
-int FileConfig::CStrToInt(char* string) {
-    if (string != NULL) {
-        return atoi(string);
-    }
-    return 0;
-}
-
-bool FileConfig::Search(const char* symbol, const char* group, int client_login, int volume,
-                        int order_type, ExternalConfig* external_config) {
+bool FileConfig::Search(const char* symbol, const char* group, int client_login, int volume, int order_type,
+                        ExternalConfig* external_config) {
     for (int i = 0; i < m_config_total; i++) {
         if (strcmp(symbol, this->m_config[i].m_symbol) != 0) {
             continue;
