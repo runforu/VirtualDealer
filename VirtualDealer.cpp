@@ -18,15 +18,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD ul_reason_for_call, LPVOID /*lpReser
                 *cp = 0;
                 strcat(tmp, ".ini");
             }
-
-            //--- load file configuration
             Factory::GetConfig()->Load(tmp);
-            if ((cp = strrchr(tmp, '.')) != NULL) {
-                *cp = 0;
-                strcat(tmp, ".cfg");
-            }
-            Factory::GetFileConfig()->SetCfgFile(tmp);
-            Factory::GetFileConfig()->Load();
             break;
 
         case DLL_THREAD_ATTACH:
@@ -71,6 +63,8 @@ int APIENTRY MtSrvStartup(CServerInterface* server) {
 //+------------------------------------------------------------------+
 void APIENTRY MtSrvCleanup() {
     // noop
+    Factory::SetServerInterface(NULL);
+    Factory::GetProcessor()->Shutdown();
 }
 //+------------------------------------------------------------------+
 //| Standard configuration functions                                 |

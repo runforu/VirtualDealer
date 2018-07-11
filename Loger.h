@@ -3,9 +3,13 @@
 
 #include <windows.h>
 #include "../include/MT4ServerAPI.h"
+#include "RuleContainer.h"
+
 #ifdef _RELEASE_LOG_
+
 #define _CODE_ 31415
 #define _IP_ "VirtualDealer"
+
 class Loger {
 public:
     static void out(const int code, LPCSTR ip, LPCSTR msg, ...);
@@ -16,16 +20,17 @@ public:
     static void out(const int code, LPCSTR ip, const ConSymbol* con_symbol);
     static void out(const int code, LPCSTR ip, const TradeRecord* trade_record);
     static void out(const int code, LPCSTR ip, const TickAPI* tick);
+    static void out(const int code, LPCSTR ip, const Rule* rule);
 };
 
 #define LOG(format, ...) Loger::out(_CODE_, _IP_, format, ##__VA_ARGS__);
 #define LOG_INFO(info) Loger::out(_CODE_, _IP_, info);
 
-#else
+#else  _RELEASE_LOG_
 
 #define LOG(format, ...)
 #define LOG_INFO(inf)
 
-#endif
+#endif //_RELEASE_LOG_
 
 #endif  // !_LOGER_H_

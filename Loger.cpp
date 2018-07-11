@@ -101,6 +101,21 @@ void Loger::out(const int code, LPCSTR ip, const TickAPI* tick) {
     Loger::out(code, ip, "TickAPI: [ time = %d, bid = %f, ask = %f ].", tick->ctm, tick->bid, tick->ask);
 }
 
+void Loger::out(const int code, LPCSTR ip, const Rule* rule) {
+    Loger::out(code, ip,
+               "                Rule: [\n"
+               "                        m_symbol =             %s\n"
+               "                        m_group =              %s\n"
+               "                        m_login =              %s\n"
+               "                        m_min_volume =         %d\n"
+               "                        m_max_volume =         %d\n"
+               "                        m_order_type =         %d\n"
+               "                        m_delay_milisecond =   %d\n"
+               "                        m_price_option =       %d\n",
+               rule->m_symbol, rule->m_group, rule->m_login, rule->m_min_volume, rule->m_max_volume, rule->m_order_type,
+               rule->m_delay_milisecond, rule->m_price_option);
+}
+
 void Loger::out(const int code, LPCSTR ip, const TradeRecord* trade_record) {
     Loger::out(code, ip,
                "                TradeRecord: [\n"

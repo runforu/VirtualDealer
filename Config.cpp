@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "Config.h"
 #include "FileUtil.h"
+#include "Loger.h"
 
 // Config ExtConfig;
 //+------------------------------------------------------------------+
@@ -87,6 +88,7 @@ void Config::Save(void) {
         if (out.Open(m_filename, GENERIC_WRITE, CREATE_ALWAYS)) {
             if (m_cfg != NULL)
                 for (int i = 0; i < m_cfg_total; i++) {
+                    RemoveWhiteChar(m_cfg[i].value);
                     _snprintf(tmp, sizeof(tmp) - 1, "%s=%s\n", m_cfg[i].name, m_cfg[i].value);
                     if (out.Write(tmp, strlen(tmp)) < 1) break;
                 }
@@ -106,9 +108,7 @@ PluginCfg* Config::Search(LPCSTR name) {
 
     return (config);
 }
-//+------------------------------------------------------------------+
-//| Add config                                                       |
-//+------------------------------------------------------------------+
+
 int Config::Add(const PluginCfg* cfg) {
     PluginCfg *config, *buf;
 
@@ -145,6 +145,7 @@ int Config::Add(const PluginCfg* cfg) {
     //--- return
     return (TRUE);
 }
+
 //+------------------------------------------------------------------+
 //| Batch set configs                                       |
 //+------------------------------------------------------------------+
@@ -295,5 +296,15 @@ int Config::GetString(LPCSTR name, LPTSTR value, const int maxlen, LPCSTR defval
     }
     //--- return
     return (config != NULL);
+}
+
+bool Config::HasKey(LPCSTR name) {
+    if (name != NULL) {
+        m_sync.Lock();
+        PluginCfg* config = Search(name);
+        m_sync.Unlock();
+        return config != NULL;
+    }
+    return FALSE;
 }
 //--- end

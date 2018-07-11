@@ -2,8 +2,8 @@
 #define _PROCESSOR_H_
 
 #include "Config.h"
+#include "RuleContainer.h"
 #include "TickHistory.h"
-#include "FileConfig.h"
 
 #define TIME_ZONE_DIFF 10800
 
@@ -28,18 +28,23 @@ private:
     UserInfo m_manager;
 
     //--- configurations
-    int m_delay_milisecond;
     int m_virtual_dealer_login;
     int m_disable_virtual_dealer;
-    int m_enable_comment;
-    LONG m_update_config;
-    int m_enable_tp_slippage;
 
-    //--- wp: worst price; bp: best price; fp: first price; np: next price; op: price of order opening
-    char m_price_option[4];
-    char m_group[32];
-    char m_symbols[32];
+    //--- default rule to filter transanction
+    char m_global_rule_symbol[12];
+    char m_global_rule_group[16];
+    int m_global_rule_login;
+    int m_global_rule_min_volume;
+    int m_global_rule_max_volume;
+    int m_global_rule_order_type;
+    int m_global_rule_delay_milisecond;
+    PriceOption m_global_rule_price_option;
 
+    //--- specific rules to filter transanction
+    RuleContainer m_rule_container;
+
+    //--- record the tick
     TickHistory m_tick_history;
 
     //--- statistics
@@ -49,10 +54,15 @@ private:
 
     Synchronizer m_sync;
 
+    //--- TODO
+    HANDLE m_thread_handle[32]; 
+
 public:
     void Initialize();
-    void UpdateFileConfig();
-    inline void Reinitialize() { InterlockedExchange(&m_reinitialize_flag, 1); }
+    inline void Reinitialize() {
+        Initialize();
+        // InterlockedExchange(&m_reinitialize_flag, 1);
+    }
     void ShowStatus();
     void ProcessRequest(RequestInfo* request);
     bool ActivatePendingOrder(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol, const TradeRecord* pending,
@@ -65,14 +75,16 @@ public:
 
     void GetPrice(RequestHelper* helper, double* prices);
 
+    void Shutdown(void);
+
 private:
     Processor();
     ~Processor();
 
     static int GetSpreadDiff(RequestInfo* request);
     static int GetSpreadDiff(char* group);
-    static DWORD WINAPI Delay(LPVOID parameter);
-    static bool  SpreadDiff(char* group, char* symbol, TickAPI * tick);
+    static UINT __stdcall Delay(LPVOID parameter);
+    static bool SpreadDiff(char* group, char* symbol, TickAPI* tick);
 
 private:  // TODO
     //--- delay activation of pending order

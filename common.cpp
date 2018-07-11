@@ -121,7 +121,6 @@ int CStrToInt(char* string) {
     return 0;
 }
 
-
 char* RemoveWhiteChar(char* str) {
     char *pend = str, *pch = str;
     while (*pch != 0) {
@@ -135,6 +134,7 @@ char* RemoveWhiteChar(char* str) {
         pend++;
         pch++;
     }
+    *pend = 0;
     return str;
 }
 
@@ -164,4 +164,74 @@ char* StrRange(char* str, const char begin, const char end, char** buf) {
         return result;
     }
     return NULL;
+}
+
+PriceOption ToPriceOption(char* price_option) {
+    if (price_option == NULL || strlen(price_option) == 0) {
+        return PO_WORST_PRICE;
+    }
+    if (strcmp("bp", price_option) == 0 && strlen(price_option) == 2) {
+        return PO_BEST_PRICE;
+    }
+    if (strcmp("fp", price_option) == 0 && strlen(price_option) == 2) {
+        return PO_FIRST_PRICE;
+    }
+    if (strcmp("np", price_option) == 0 && strlen(price_option) == 2) {
+        return PO_NEXT_PRICE;
+    }
+    if (strcmp("op", price_option) == 0 && strlen(price_option) == 2) {
+        return PO_ORDER_PRICE;
+    }
+    return PO_WORST_PRICE;
+}
+
+int ToOrderType(char* type, int default_value) {
+    if (type == NULL || strlen(type) == 0) {
+        return default_value;
+    }
+
+    if (strcmp(type, "*") == 0) {
+        return OT_ALL;
+    }
+
+    int mask = 0;
+    char tmp[32], *start, *cp;
+    strncpy_s(tmp, type, sizeof(tmp));
+    start = tmp;
+
+    do {
+        cp = strstr(start, "|");
+        if (cp != NULL) {
+            *cp = 0;
+            cp++;
+        }
+        if (strcmp(start, "open") == 0) {
+            mask |= OT_OPEN;
+        } else if (strcmp(start, "close") == 0) {
+            mask |= OT_CLOSE;
+        } else if (strcmp(start, "tp") == 0) {
+            mask |= OT_TP;
+        } else if (strcmp(start, "sl") == 0) {
+            mask |= OT_SL;
+        } else {
+            return default_value;
+        }
+        start = cp;
+    } while (start != NULL && strlen(start) != 0);
+
+    return mask;
+}
+
+bool IsDigitalStr(char* string) {
+    if (string == NULL) {
+        return false;
+    }
+
+    while (*string != 0) {
+        if (*string < '0' || *string > '9') {
+            return false;
+        }
+        string++;
+    }
+    return true;
 }

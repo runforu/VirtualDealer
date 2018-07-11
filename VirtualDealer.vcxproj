@@ -176,7 +176,7 @@
   <ItemGroup>
     <ClCompile Include="common.cpp" />
     <ClCompile Include="Config.cpp" />
-    <ClCompile Include="FileConfig.cpp" />
+    <ClCompile Include="RuleContainer.cpp" />
     <ClCompile Include="FileUtil.cpp" />
     <ClCompile Include="Loger.cpp" />
     <ClCompile Include="TickHistory.cpp" />
@@ -188,7 +188,7 @@
     <ClInclude Include="common.h" />
     <ClInclude Include="Config.h" />
     <ClInclude Include="Factory.h" />
-    <ClInclude Include="FileConfig.h" />
+    <ClInclude Include="RuleContainer.h" />
     <ClInclude Include="FileUtil.h" />
     <ClInclude Include="Loger.h" />
     <ClInclude Include="Processor.h" />

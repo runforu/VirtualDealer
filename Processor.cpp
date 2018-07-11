@@ -1,7 +1,8 @@
 #include <stdio.h>
+#include <process.h>
 #include "Factory.h"
-#include "Processor.h"
 #include "Loger.h"
+#include "Processor.h"
 
 void Processor::GetPrice(RequestHelper* helper, double* prices) {
     RequestInfo* request_info = helper->m_request_info;
@@ -84,48 +85,82 @@ void Processor::GetPrice(RequestHelper* helper, double* prices) {
     }
 }
 
+void Processor::Shutdown(void)
+{
+    //release threads
+
+}
+
 //+------------------------------------------------------------------+
 //| Constructor                                                      |
 //+------------------------------------------------------------------+
 Processor::Processor()
     : m_reinitialize_flag(0),
-      m_delay_milisecond(1000),
+      m_global_rule_delay_milisecond(1000),
       m_virtual_dealer_login(31415),
       m_disable_virtual_dealer(0),
-      m_enable_comment(0),
-      m_update_config(0),
-      m_enable_tp_slippage(0),
       m_requests_total(0),
       m_requests_processed(0) {
     ZeroMemory(&m_manager, sizeof(m_manager));
     m_manager.login = 31415;
     COPY_STR(m_manager.name, "Virtual Dealer");
     COPY_STR(m_manager.ip, "VirtualDealer");
-    COPY_STR(m_symbols, "*");
+    COPY_STR(m_global_rule_symbol, "*");
 }
 
-Processor::~Processor() {}
+Processor::~Processor() {
+}
 
 void Processor::Initialize() {
-    Factory::GetConfig()->GetInteger("Delayed Miliseconds", &m_delay_milisecond, "1000");
-    Factory::GetConfig()->GetInteger("Virtual Dealer", &m_virtual_dealer_login, "31415");
+    Factory::GetConfig()->GetInteger("Virtual Dealer ID", &m_virtual_dealer_login, "31415");
     m_manager.login = m_virtual_dealer_login;
-    Factory::GetConfig()->GetInteger("Disable Plugin", &m_disable_virtual_dealer, "0");
-    Factory::GetConfig()->GetInteger("Enable Comment", &m_enable_comment, "0");
-    Factory::GetConfig()->GetLong("Update Config", &m_update_config, "0");
-    Factory::GetConfig()->GetInteger("Enable TP Slippage", &m_enable_tp_slippage, "0");
 
-    Factory::GetConfig()->GetString("Price Option", m_price_option, sizeof(m_price_option) - 1, "wp");
-    if (m_price_option[0] == 0) {
-        COPY_STR(m_price_option, "wp");
+    Factory::GetConfig()->GetInteger("Disable Plugin", &m_disable_virtual_dealer, "0");
+
+    //--- Default rule
+    Factory::GetConfig()->GetString("Symbol", m_global_rule_symbol, sizeof(m_global_rule_symbol) - 1, "*");
+    if (m_global_rule_symbol[0] == 0) {
+        COPY_STR(m_global_rule_symbol, "*");
     }
-    Factory::GetConfig()->GetString("Group", m_group, sizeof(m_group) - 1, "*");
-    if (m_group[0] == 0) {
-        COPY_STR(m_group, "*");
+
+    Factory::GetConfig()->GetString("Group", m_global_rule_group, sizeof(m_global_rule_group) - 1, "*");
+    if (m_global_rule_group[0] == 0) {
+        COPY_STR(m_global_rule_group, "*");
     }
-    Factory::GetConfig()->GetString("Symbols", m_symbols, sizeof(m_symbols) - 1, "*");
-    if (m_symbols[0] == 0) {
-        COPY_STR(m_symbols, "*");
+
+    char buffer[16] = {0};
+    Factory::GetConfig()->GetString("Customer ID", buffer, sizeof(buffer) - 1, "*");
+    RemoveWhiteChar(buffer);
+    if (buffer[0] == 0 || buffer[0] == '*') {
+        m_global_rule_login = -1;
+    } else {
+        m_global_rule_login = CStrToInt(buffer);
+    }
+
+    Factory::GetConfig()->GetInteger("Min Volume", &m_global_rule_min_volume, "-1");
+
+    Factory::GetConfig()->GetInteger("Max Volume", &m_global_rule_max_volume, "-1");
+
+    Factory::GetConfig()->GetString("Oder Type", buffer, sizeof(buffer) - 1, "*");
+    m_global_rule_order_type = ToOrderType(buffer, OT_ALL);
+
+    Factory::GetConfig()->GetInteger("Delayed Miliseconds", &m_global_rule_delay_milisecond, "1000");
+
+    buffer[0] = 0;
+    Factory::GetConfig()->GetString("Price Option", buffer, sizeof(buffer) - 1, "wp");
+    m_global_rule_price_option = ToPriceOption(buffer);
+
+    //--- specific rules
+    m_rule_container.Clear();
+    char rule[128];
+    int i = 0;
+    sprintf_s(buffer, "Rule_%d", i++);
+    while (Factory::GetConfig()->HasKey(buffer)) {
+        //--- Add a rule
+        Factory::GetConfig()->GetString(buffer, rule, sizeof(rule) - 1, "");
+        LOG("Add a rule: %s", rule);
+        m_rule_container.AddRule(rule);
+        sprintf_s(buffer, "Rule_%d", i++);
     }
 }
 //+------------------------------------------------------------------+
@@ -140,16 +175,23 @@ void Processor::ShowStatus() {
     }
 }
 
-DWORD WINAPI Processor::Delay(LPVOID parameter) {
+UINT __stdcall Processor::Delay(LPVOID parameter) {
     RequestHelper* request_helper = (RequestHelper*)parameter;
     if (Factory::GetServerInterface() == NULL || Factory::GetProcessor() == NULL) {
         delete request_helper;
+        _endthreadex(0);
         return 0;
     }
 
     LOG("In delayed thread, request id = %d; thread id = %d.", request_helper->m_request_info->id, GetCurrentThreadId());
 
     Sleep(request_helper->m_delay_milisecond);
+
+    if (Factory::GetServerInterface() == NULL) {
+        delete request_helper;
+        _endthreadex(0);
+        return 0;
+    }
 
     //--- Modify the price
     RequestInfo* request_info = request_helper->m_request_info;
@@ -164,6 +206,7 @@ DWORD WINAPI Processor::Delay(LPVOID parameter) {
     delete request_helper;
 
     LOG("In delayed thread, Request freed thread.");
+    _endthreadex(0);
     return 0;
 }
 
@@ -200,10 +243,6 @@ void Processor::ProcessRequest(RequestInfo* request) {
     //--- reinitialize if configuration changed
     if (InterlockedExchange(&m_reinitialize_flag, 0) != 0) {
         Initialize();
-        if (m_update_config == 1) {
-            InterlockedExchange(&m_update_config, 0);
-            UpdateFileConfig();
-        }
     }
 
     //--- plugin disabled
@@ -213,34 +252,18 @@ void Processor::ProcessRequest(RequestInfo* request) {
         return;
     }
 
-    //--- close all
     TradeTransInfo* trans = &request->trade;
     if (trans->type < TT_ORDER_IE_OPEN || trans->type > TT_ORDER_MK_CLOSE || trans->type == TT_ORDER_PENDING_OPEN) {
         Factory::GetServerInterface()->RequestsConfirm(request->id, &m_manager, request->prices);
         return;
     }
 
-    //--- global group check
-    if (strcmp(m_group, "*") != 0 && strstr(m_group, request->group) == NULL) {
-        Factory::GetServerInterface()->RequestsConfirm(request->id, &m_manager, request->prices);
-        LOG("group check fail");
-        return;
-    }
-
-    //--- global symbol check
-    if (strcmp(m_symbols, "*") != 0 && strstr(m_symbols, trans->symbol) == NULL) {
-        Factory::GetServerInterface()->RequestsConfirm(request->id, &m_manager, request->prices);
-        LOG("symbol check fail");
-        return;
-    }
-
     RequestHelper* request_helper = new RequestHelper;
     request_helper->m_request_info = request;
-    request_helper->m_price_option = Factory::GetFileConfig()->ToPriceOption(m_price_option);
-    request_helper->m_delay_milisecond = m_delay_milisecond;
     request_helper->m_start_time = time(NULL) + TIME_ZONE_DIFF;
 
-    //--- apply cfg file config
+    //--- apply rules
+
     int order_type = OT_NONE;
     if (trans->type == TT_ORDER_IE_OPEN || trans->type == TT_ORDER_MK_OPEN || trans->type == TT_ORDER_REQ_OPEN) {
         order_type |= OT_OPEN;
@@ -249,21 +272,69 @@ void Processor::ProcessRequest(RequestInfo* request) {
         order_type |= OT_CLOSE;
     }
 
-    ExternalConfig ec;
-    if (Factory::GetFileConfig()->Search(trans->symbol, request->group, request->login, trans->volume, order_type, &ec)) {
-        request_helper->m_price_option = ec.m_price_option;
-        request_helper->m_delay_milisecond = ec.m_delay_milisecond;
+    Rule rule;
+    if (m_rule_container.Search(trans->symbol, request->group, request->login, trans->volume, order_type, &rule)) {
+        //--- apply specific rule
+        request_helper->m_price_option = rule.m_price_option;
+        request_helper->m_delay_milisecond = rule.m_delay_milisecond;
+    } else {
+        //--- apply global rule
+
+        //--- global symbol check
+        if (strcmp(m_global_rule_symbol, "*") != 0 && strcmp(m_global_rule_symbol, trans->symbol) == NULL) {
+            LOG("global symbol check");
+            goto without_delay;
+        }
+
+        //--- global group check
+        if (strcmp(m_global_rule_group, "*") != 0 && strcmp(m_global_rule_group, request->group) == NULL) {
+            LOG("global group check");
+            goto without_delay;
+        }
+
+        //--- global login check
+        if (m_global_rule_login != -1 && m_global_rule_login == request->login) {
+            LOG("global group check");
+            goto without_delay;
+        }
+
+        //--- global min volume check
+        if (m_global_rule_min_volume != -1) {
+            if (trans->volume < m_global_rule_min_volume) {
+                LOG("global min volume check");
+                goto without_delay;
+            }
+        }
+        //--- global max volume check
+        if (m_global_rule_max_volume != -1) {
+            if (trans->volume > m_global_rule_max_volume) {
+                LOG("global max volume check");
+                goto without_delay;
+            }
+        }
+        //--- global order type check
+        if ((order_type & m_global_rule_order_type) == 0) {
+            LOG("globalorder type check");
+            goto without_delay;
+        }
+
+        request_helper->m_price_option = m_global_rule_price_option;
+        request_helper->m_delay_milisecond = m_global_rule_delay_milisecond;
     }
 
     if (request_helper->m_delay_milisecond == 0) {
-        Factory::GetServerInterface()->RequestsConfirm(request->id, &m_manager, request->prices);
-        return;
+        LOG("delay 0 milisecond, go out");
+        goto without_delay;
     }
 
     Factory::GetServerInterface()->RequestsLock(request->id, m_manager.login);
-
-    HANDLE hThread = CreateThread(NULL, 0, Processor::Delay, (LPVOID)request_helper, 0, NULL);
+    HANDLE hThread = (HANDLE)_beginthreadex(NULL, 0, Processor::Delay, (LPVOID)request_helper, 0, NULL);
     m_requests_total++;
+    return;
+
+without_delay:
+    Factory::GetServerInterface()->RequestsConfirm(request->id, &m_manager, request->prices);
+    delete request_helper;
 }
 
 bool Processor::ActivatePendingOrder(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol,
@@ -292,5 +363,3 @@ void Processor::TickApply(const ConSymbol* symbol, FeedTick* tick) {
     m_tick_history.AddTick(symbol, tick);
     Unlock();
 }
-
-void Processor::UpdateFileConfig() { Factory::GetFileConfig()->Load(); }

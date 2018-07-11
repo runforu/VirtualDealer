@@ -23,7 +23,9 @@ private:
 public:
     //--- Initializing the database (reading the config file)
     void Load(LPCSTR filename);
+
     //--- access
+    int Add(const char* name, const char* value, bool save = false);
     int Add(const PluginCfg* cfg);
     int Set(const PluginCfg* values, const int total);
     int Get(LPCSTR name, PluginCfg* cfg);
@@ -39,7 +41,7 @@ public:
     int GetInteger(LPCSTR name, int* value, LPCSTR defvalue = NULL);
     int GetLong(LPCSTR name, long* value, LPCSTR defvalue = NULL);
     int GetString(LPCSTR name, LPTSTR value, const int maxlen, LPCSTR defvalue = NULL);
-
+    bool HasKey(LPCSTR name);
 private:
     Config();
     ~Config();
