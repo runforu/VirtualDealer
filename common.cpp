@@ -166,7 +166,7 @@ char* StrRange(char* str, const char begin, const char end, char** buf) {
     return NULL;
 }
 
-PriceOption ToPriceOption(char* price_option) {
+PriceOption ToPriceOption(const char* price_option) {
     if (price_option == NULL || strlen(price_option) == 0) {
         return PO_WORST_PRICE;
     }
@@ -185,7 +185,7 @@ PriceOption ToPriceOption(char* price_option) {
     return PO_WORST_PRICE;
 }
 
-int ToOrderType(char* type, int default_value) {
+int ToOrderType(const char* type, int default_value) {
     if (type == NULL || strlen(type) == 0) {
         return default_value;
     }
@@ -213,6 +213,8 @@ int ToOrderType(char* type, int default_value) {
             mask |= OT_TP;
         } else if (strcmp(start, "sl") == 0) {
             mask |= OT_SL;
+        } else if (strcmp(start, "pending") == 0) {
+            mask |= OT_PENDING;
         } else {
             return default_value;
         }

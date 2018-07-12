@@ -22,7 +22,7 @@ public:
     bool FindMaxAsk(const char* symbol, time_t from, TickAPI& tick);
     bool FindMinAsk(const char* symbol, time_t from, TickAPI& tick);
     bool GetFirstPrice(const char* symbol, time_t from, TickAPI& tick);
-    void DumpTickPool(const char* symbol);
+    void DumpTickPool(const char* symbol, time_t from = 0);
     int FindTickPool(const char* symbol);
     TickHistory() : m_symbol_count(0) { ZeroMemory(m_tick_pool, sizeof(m_tick_pool)); }
 

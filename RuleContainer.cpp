@@ -23,20 +23,22 @@ bool RuleContainer::ParseRule(const char* line, Rule* rule) {
     //--- copy symbol
     char* pchar = StrRange(buf, '<', '>', &cp);
     if (pchar != NULL && strlen(pchar) != 0) {
-        COPY_STR(rule->m_symbol, pchar);
-    } else {
+        COPY_STR(rule->m_group, pchar);
+    }
+    else {
         return false;
     }
-    LOG("rule ---  symbol = %s", pchar);
+    LOG("rule ---  group = %s", pchar);
 
     //--- copy group
     pchar = StrRange(NULL, '<', '>', &cp);
     if (pchar != NULL && strlen(pchar) != 0) {
-        COPY_STR(rule->m_group, pchar);
-    } else {
+        COPY_STR(rule->m_symbol, pchar);
+    }
+    else {
         return false;
     }
-    LOG("rule ---  group = %s", pchar);
+    LOG("rule ---  symbol = %s", pchar);
 
     //--- copy login
     pchar = StrRange(NULL, '<', '>', &cp);
@@ -76,7 +78,7 @@ bool RuleContainer::ParseRule(const char* line, Rule* rule) {
     } else {
         return false;
     }
-    LOG("rule ---  order_type = %s", pchar);
+    LOG("rule ---  order_type = %s, type = %d ", pchar, rule->m_order_type);
 
     //--- copy delay_milisecond
     pchar = StrRange(NULL, '<', '>', &cp);
@@ -120,27 +122,34 @@ void RuleContainer::Clear() {
 
 bool RuleContainer::Search(const char* symbol, const char* group, int client_login, int volume, int order_type, Rule* rule) {
     m_sync.Lock();
+    LOG("Search symbole = %s, group = %s, login = %d, volume = %d, order type = %d", symbol, group, client_login, volume, order_type );
     for (int i = 0; i < m_rule_total; i++) {
         if (strcmp(this->m_rules[i].m_symbol, "*") != 0 && strcmp(symbol, this->m_rules[i].m_symbol) != 0) {
+            LOG("rule symbole = %s", this->m_rules[i].m_symbol);
             continue;
         }
         if (strcmp("*", this->m_rules[i].m_group) != 0 && strcmp(group, this->m_rules[i].m_group) != 0) {
+            LOG("rule group = %s", this->m_rules[i].m_group);
             continue;
         }
         if (this->m_rules[i].m_login != -1 && this->m_rules[i].m_login != client_login) {
+            LOG("rule group = %d", this->m_rules[i].m_login);
             continue;
         }
         if (this->m_rules[i].m_min_volume != -1) {
             if (volume < this->m_rules[i].m_min_volume) {
+                LOG("rule min volume = %d", this->m_rules[i].m_min_volume);
                 continue;
             }
         }
         if (this->m_rules[i].m_max_volume != -1) {
             if (volume > this->m_rules[i].m_max_volume) {
+                LOG("rule max volume = %d", this->m_rules[i].m_max_volume);
                 continue;
             }
         }
         if ((order_type & this->m_rules[i].m_order_type) == 0) {
+            LOG("rule order type = %d", this->m_rules[i].m_order_type);
             continue;
         }
 

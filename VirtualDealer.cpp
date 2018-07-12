@@ -1,7 +1,7 @@
 #include "Config.h"
 #include "Factory.h"
-#include "Processor.h"
 #include "Loger.h"
+#include "Processor.h"
 
 PluginInfo ExtPluginInfo = {"Virtual Dealer", 1, "Moa International.", {0}};
 
@@ -170,13 +170,18 @@ int APIENTRY MtSrvTradePendingsFilter(const ConGroup* group, const ConSymbol* sy
 int APIENTRY MtSrvTradePendingsApply(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol,
                                      const TradeRecord* pending, TradeRecord* trade) {
     LOG("MtSrvTradePendingsApply.");
+
+#if 0
     LOG_INFO(user);
     LOG_INFO(group);
     LOG_INFO(symbol);
     LOG_INFO(pending);
     LOG_INFO(trade);
-    
-    LOG("----------------------------------symbol->spread =  %d", symbol->spread);
+#endif
+
+    LOG("----------------------------------pending.open_time =  %d, pending.close_time = %d, pending->timestamp = %d; "
+        "trade.open_time = %d, trade.close_time = %d, trade->timestamp = %d",
+        pending->open_time, pending->close_time, pending->timestamp, trade->open_time, trade->close_time, trade->timestamp);
 
     // Here, delay activation
     if (Factory::GetProcessor()->ActivatePendingOrder(user, group, symbol, pending, trade)) {
@@ -203,7 +208,6 @@ int APIENTRY MtSrvTradeStopoutsApply(const UserInfo* user, const ConGroup* group
     // Here, set user's balance to zero
     return RET_OK;
 }
-
 
 void APIENTRY MtSrvTradesAddExt(TradeRecord* trade, const UserInfo* user, const ConSymbol* symb, const int mode) {
     LOG("MtSrvTradesAddExt.");

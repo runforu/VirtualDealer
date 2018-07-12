@@ -6,17 +6,18 @@
 
 void Processor::GetPrice(RequestHelper* helper, double* prices) {
     RequestInfo* request_info = helper->m_request_info;
+
+    LOG("request_info->prices[0] = %f, request_info->prices[1] = %f, request_info->trade.price = %f.", request_info->prices[0],
+        request_info->prices[1], request_info->trade.price);
+    prices[0] = request_info->trade.price;
+    prices[1] = request_info->trade.price;
+
     if (helper->m_price_option == PO_ORDER_PRICE) {
-        prices[0] = request_info->prices[0];
-        prices[1] = request_info->prices[1];
         return;
     }
 
     if (helper->m_price_option == PO_NEXT_PRICE) {
-        if (Factory::GetServerInterface()->HistoryPricesGroup(request_info, prices) != RET_OK) {
-            prices[0] = request_info->prices[0];
-            prices[1] = request_info->prices[1];
-        }
+        Factory::GetServerInterface()->HistoryPricesGroup(request_info, prices);
         return;
     }
 
@@ -29,14 +30,34 @@ void Processor::GetPrice(RequestHelper* helper, double* prices) {
             if (trade.type == TT_ORDER_MK_OPEN) {
                 if (trade.cmd == OP_BUY) {
                     find_tick = Factory::GetProcessor()->m_tick_history.FindMaxAsk(trade.symbol, helper->m_start_time, tick);
+                    if (find_tick && SpreadDiff(request_info->group, request_info->trade.symbol, &tick) &&
+                        tick.ask > prices[0]) {
+                        prices[0] = tick.bid;
+                        prices[1] = tick.ask;
+                    }
                 } else if (trade.cmd == OP_SELL) {
                     find_tick = Factory::GetProcessor()->m_tick_history.FindMinBid(trade.symbol, helper->m_start_time, tick);
+                    if (find_tick && SpreadDiff(request_info->group, request_info->trade.symbol, &tick) &&
+                        tick.bid < prices[1]) {
+                        prices[0] = tick.bid;
+                        prices[1] = tick.ask;
+                    }
                 }
             } else if (trade.type == TT_ORDER_MK_CLOSE) {
                 if (trade.cmd == OP_BUY) {
                     find_tick = Factory::GetProcessor()->m_tick_history.FindMinBid(trade.symbol, helper->m_start_time, tick);
+                    if (find_tick && SpreadDiff(request_info->group, request_info->trade.symbol, &tick) &&
+                        tick.bid < prices[1]) {
+                        prices[0] = tick.bid;
+                        prices[1] = tick.ask;
+                    }
                 } else if (trade.cmd == OP_SELL) {
                     find_tick = Factory::GetProcessor()->m_tick_history.FindMaxAsk(trade.symbol, helper->m_start_time, tick);
+                    if (find_tick && SpreadDiff(request_info->group, request_info->trade.symbol, &tick) &&
+                        tick.ask > prices[0]) {
+                        prices[0] = tick.bid;
+                        prices[1] = tick.ask;
+                    }
                 }
             }
             break;
@@ -44,45 +65,66 @@ void Processor::GetPrice(RequestHelper* helper, double* prices) {
             if (trade.type == TT_ORDER_MK_OPEN) {
                 if (trade.cmd == OP_BUY) {
                     find_tick = Factory::GetProcessor()->m_tick_history.FindMinAsk(trade.symbol, helper->m_start_time, tick);
+                    if (find_tick && SpreadDiff(request_info->group, request_info->trade.symbol, &tick) &&
+                        tick.ask < prices[0]) {
+                        prices[0] = tick.bid;
+                        prices[1] = tick.ask;
+                    }
                 } else if (trade.cmd == OP_SELL) {
                     find_tick = Factory::GetProcessor()->m_tick_history.FindMaxBid(trade.symbol, helper->m_start_time, tick);
+                    if (find_tick && SpreadDiff(request_info->group, request_info->trade.symbol, &tick) &&
+                        tick.bid > prices[1]) {
+                        prices[0] = tick.bid;
+                        prices[1] = tick.ask;
+                    }
                 }
             } else if (trade.type == TT_ORDER_MK_CLOSE) {
                 if (trade.cmd == OP_BUY) {
                     find_tick = Factory::GetProcessor()->m_tick_history.FindMaxBid(trade.symbol, helper->m_start_time, tick);
+                    if (find_tick && SpreadDiff(request_info->group, request_info->trade.symbol, &tick) &&
+                        tick.bid > prices[1]) {
+                        prices[0] = tick.bid;
+                        prices[1] = tick.ask;
+                    }
                 } else if (trade.cmd == OP_SELL) {
                     find_tick = Factory::GetProcessor()->m_tick_history.FindMinAsk(trade.symbol, helper->m_start_time, tick);
+                    if (find_tick && SpreadDiff(request_info->group, request_info->trade.symbol, &tick) &&
+                        tick.ask < prices[0]) {
+                        prices[0] = tick.bid;
+                        prices[1] = tick.ask;
+                    }
                 }
             }
             break;
         case PO_FIRST_PRICE:
             find_tick = Factory::GetProcessor()->m_tick_history.GetFirstPrice(trade.symbol, helper->m_start_time, tick);
+            if (find_tick && SpreadDiff(request_info->group, request_info->trade.symbol, &tick)) {
+                prices[0] = tick.bid;
+                prices[1] = tick.ask;
+            }
             break;
     }
 
 #if 1
     LOG("---------------------------");
-    Factory::GetProcessor()->m_tick_history.DumpTickPool(trade.symbol);
-    Factory::GetProcessor()->m_tick_history.FindMinAsk(trade.symbol, helper->m_start_time, tick);
-    LOG_INFO(&tick);
-    Factory::GetProcessor()->m_tick_history.FindMaxAsk(trade.symbol, helper->m_start_time, tick);
-    LOG_INFO(&tick);
-    Factory::GetProcessor()->m_tick_history.FindMaxBid(trade.symbol, helper->m_start_time, tick);
-    LOG_INFO(&tick);
-    Factory::GetProcessor()->m_tick_history.FindMinBid(trade.symbol, helper->m_start_time, tick);
-    LOG_INFO(&tick);
+    TickAPI tick1;
+    Factory::GetProcessor()->m_tick_history.DumpTickPool(trade.symbol, helper->m_start_time);
+    Factory::GetProcessor()->m_tick_history.FindMinAsk(trade.symbol, helper->m_start_time, tick1);
+    LOG("FindMinAsk");
+    LOG_INFO(&tick1);
+    Factory::GetProcessor()->m_tick_history.FindMaxAsk(trade.symbol, helper->m_start_time, tick1);
+    LOG("FindMaxAsk");
+    LOG_INFO(&tick1);
+    Factory::GetProcessor()->m_tick_history.FindMaxBid(trade.symbol, helper->m_start_time, tick1);
+    LOG("FindMaxBid");
+    LOG_INFO(&tick1);
+    Factory::GetProcessor()->m_tick_history.FindMinBid(trade.symbol, helper->m_start_time, tick1);
+    LOG("FindMinBid");
+    LOG_INFO(&tick1);
     LOG("---------------------------        from = %d", helper->m_start_time);
 #endif
 
     Unlock();
-
-    if (find_tick && SpreadDiff(request_info->group, request_info->trade.symbol, &tick)) {
-        prices[0] = tick.bid;
-        prices[1] = tick.ask;
-    } else {
-        prices[0] = request_info->prices[0];
-        prices[1] = request_info->prices[1];
-    }
 }
 
 void Processor::Shutdown(void) {
@@ -201,7 +243,7 @@ UINT __stdcall Processor::Delay(LPVOID parameter) {
 
     double prices[2];
     Factory::GetProcessor()->GetPrice(request_helper, prices);
-
+    LOG("prices ----------- %f %f", prices[0], prices[1]);
     Factory::GetServerInterface()->RequestsFree(request_helper->m_request_info->id, Factory::GetProcessor()->m_manager.login);
     Factory::GetServerInterface()->RequestsConfirm(request_helper->m_request_info->id, &Factory::GetProcessor()->m_manager,
                                                    prices);
@@ -218,9 +260,8 @@ bool Processor::SpreadDiff(char* group, char* symbol, TickAPI* tick) {
     if (Factory::GetServerInterface()->SymbolsGet(symbol, &con_symbol) != FALSE) {
         LOG("SpreadDiff----------TickAPI [%d %f %f]", tick->ctm, tick->bid, tick->ask);
         int diff = GetSpreadDiff(group);
-        double delta = NormalizeDouble(con_symbol.point * diff / 2, con_symbol.digits);
-        tick->bid -= delta;
-        tick->ask += delta;
+        tick->bid = NormalizeDouble(tick->bid - con_symbol.point * diff / 2, con_symbol.digits);
+        tick->ask = NormalizeDouble(tick->ask + con_symbol.point * diff / 2, con_symbol.digits);
         LOG("SpreadDiff----------TickAPI [%d %f %f]", tick->ctm, tick->bid, tick->ask);
         return true;
     }
@@ -265,7 +306,7 @@ void Processor::ProcessRequest(RequestInfo* request) {
 
     RequestHelper* request_helper = new RequestHelper;
     request_helper->m_request_info = request;
-    request_helper->m_start_time = time(NULL) + TIME_ZONE_DIFF;
+    request_helper->m_start_time = time(NULL) + TIME_ZONE_DIFF - 1;
 
     //--- apply rules
 
@@ -289,19 +330,19 @@ void Processor::ProcessRequest(RequestInfo* request) {
         //--- apply global rule
 
         //--- global symbol check
-        if (strcmp(m_global_rule_symbol, "*") != 0 && strcmp(m_global_rule_symbol, trans->symbol) == NULL) {
+        if (strcmp(m_global_rule_symbol, "*") != 0 && strcmp(m_global_rule_symbol, trans->symbol) != 0) {
             LOG("global symbol check");
             goto without_delay;
         }
 
         //--- global group check
-        if (strcmp(m_global_rule_group, "*") != 0 && strcmp(m_global_rule_group, request->group) == NULL) {
+        if (strcmp(m_global_rule_group, "*") != 0 && strcmp(m_global_rule_group, request->group) != 0) {
             LOG("global group check");
             goto without_delay;
         }
 
         //--- global login check
-        if (m_global_rule_login != -1 && m_global_rule_login == request->login) {
+        if (m_global_rule_login != -1 && m_global_rule_login != request->login) {
             LOG("global group check");
             goto without_delay;
         }
@@ -372,8 +413,10 @@ bool Processor::AllowSLTP(const UserInfo* user, const ConGroup* group, const Con
 
 void Processor::TickApply(const ConSymbol* symbol, FeedTick* tick) {
     Lock();
+#if 0
     time_t t = time(NULL);
     LOG("current time = %d; tick time = %d", t + TIME_ZONE_DIFF, tick->ctm);
+#endif
     m_tick_history.AddTick(symbol, tick);
     Unlock();
 }

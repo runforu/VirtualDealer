@@ -16,7 +16,8 @@ enum OrderType {
     OT_CLOSE = 0x02,
     OT_TP = 0x04,
     OT_SL = 0x08,
-    OT_ALL = 0x0F,
+    OT_PENDING = 0x10,
+    OT_ALL = 0x1F,
 };
 
 double __fastcall NormalizeDouble(const double val, int digits);
@@ -31,9 +32,9 @@ char* StrRange(char* str, const char begin, const char end, char** buf);
 
 int CStrToInt(char* string);
 
-PriceOption ToPriceOption(char* price_option);
+PriceOption ToPriceOption(const char* price_option);
 
-int ToOrderType(char* type, int default_value);
+int ToOrderType(const char* type, int default_value);
 
 bool IsDigitalStr(char* string);
 

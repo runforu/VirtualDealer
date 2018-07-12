@@ -1,5 +1,6 @@
-#include "TickHistory.h"
+#include <time.h>
 #include "Loger.h"
+#include "TickHistory.h"
 
 void TickHistory::AddTick(const ConSymbol* symbol, FeedTick* tick) {
     if (tick->ctm == 0) {
@@ -63,7 +64,7 @@ bool TickHistory::GetFirstPrice(const char* symbol, time_t from, TickAPI& tick) 
     return false;
 }
 
-void TickHistory::DumpTickPool(const char* symbol) {
+void TickHistory::DumpTickPool(const char* symbol, time_t from) {
     int index = FindTickPool(symbol);
     if (index == -1) {
         return;
@@ -71,6 +72,9 @@ void TickHistory::DumpTickPool(const char* symbol) {
     TickPool* tp = &m_tick_pool[index];
     for (int i = tp->m_tail, j = 0; j < MAX_TICK_SIZE; j++, i = (i + 1) % MAX_TICK_SIZE) {
         TickAPI* tick_api = &tp->m_buffer[i];
+        if (tick_api->ctm < from) {
+            continue;
+        }
         LOG("tail = %d, No. = %d: [%d %f %f];", i, j, tick_api->ctm, tick_api->bid, tick_api->ask);
     }
 }
@@ -98,32 +102,35 @@ bool TickHistory::FindTick(const char* symbol, time_t from, bool use_bid, bool n
     for (int i = tp->m_tail, j = 0; j < MAX_TICK_SIZE; j++, i = (i + 1) % MAX_TICK_SIZE) {
         TickAPI* tick_api = &tp->m_buffer[i];
 
+        if (tick_api->ctm < from) {
+            continue;
+        }
+
         if (!initialized) {
             if (tick_api->ctm != 0 && tick_api->ctm >= from) {
                 tick = *tick_api;
                 initialized = true;
-                LOG("initialized");
             }
             continue;
         }
 
         if (use_bid) {
             if (need_max) {
-                if (tick.bid < tick_api->bid && tick_api->ctm >= from) {
+                if (tick.bid < tick_api->bid) {
                     tick = *tick_api;
                 }
             } else {
-                if (tick.bid > tick_api->bid && tick_api->ctm >= from) {
+                if (tick.bid > tick_api->bid) {
                     tick = *tick_api;
                 }
             }
         } else {
             if (need_max) {
-                if (tick.ask < tick_api->ask && tick_api->ctm >= from) {
+                if (tick.ask < tick_api->ask) {
                     tick = *tick_api;
                 }
             } else {
-                if (tick.ask > tick_api->ask && tick_api->ctm >= from) {
+                if (tick.ask > tick_api->ask) {
                     tick = *tick_api;
                 }
             }
