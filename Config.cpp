@@ -75,6 +75,7 @@ void Config::Load(LPCSTR filename) {
     //--- sort config by name
     if (m_cfg != NULL && m_cfg_total > 0) qsort(m_cfg, m_cfg_total, sizeof(PluginCfg), SortByName);
     m_sync.Unlock();
+    LOG("------------Load----------Load------Load------");
 }
 //+------------------------------------------------------------------+
 //| save configs to file                                             |
@@ -88,7 +89,6 @@ void Config::Save(void) {
         if (out.Open(m_filename, GENERIC_WRITE, CREATE_ALWAYS)) {
             if (m_cfg != NULL)
                 for (int i = 0; i < m_cfg_total; i++) {
-                    RemoveWhiteChar(m_cfg[i].value);
                     _snprintf(tmp, sizeof(tmp) - 1, "%s=%s\n", m_cfg[i].name, m_cfg[i].value);
                     if (out.Write(tmp, strlen(tmp)) < 1) break;
                 }
@@ -107,6 +107,51 @@ PluginCfg* Config::Search(LPCSTR name) {
         config = (PluginCfg*)bsearch(name, m_cfg, m_cfg_total, sizeof(PluginCfg), SearchByName);
 
     return (config);
+}
+
+int Config::Add(const char* name, const char* value, bool save) {
+    PluginCfg *config, *buf;
+
+    if (name == NULL || name[0] == 0 || value == NULL) {
+        return (FALSE);
+    }
+
+    m_sync.Lock();
+    if ((config = Search(name)) != NULL) {
+        memcpy(config->name, name, sizeof(PluginCfg::name));
+        memcpy(config->value, value, sizeof(PluginCfg::value));
+    } else {
+        //--- reach max size or empty
+        if (m_cfg == NULL || m_cfg_total >= m_cfg_max) {
+            //--- reallocate memory
+            if ((buf = new PluginCfg[m_cfg_total + 64]) == NULL) {
+                m_sync.Unlock();
+                return (FALSE);
+            }
+            //--- copy old configs
+            if (m_cfg != NULL) {
+                if (m_cfg_total > 0) {
+                    memcpy(buf, m_cfg, sizeof(PluginCfg) * m_cfg_total);
+                }
+                delete[] m_cfg;
+            }
+            //--- replace old buf
+            m_cfg = buf;
+            m_cfg_max = m_cfg_total + 64;
+        }
+        //--- add new config
+        memcpy(config->name, name, sizeof(PluginCfg::name));
+        memcpy(config->value, value, sizeof(PluginCfg::value));
+        //--- sort configs by name
+        qsort(m_cfg, m_cfg_total, sizeof(PluginCfg), SortByName);
+    }
+    m_sync.Unlock();
+
+    if (save) {
+        Save();
+    }
+
+    return (TRUE);
 }
 
 int Config::Add(const PluginCfg* cfg) {

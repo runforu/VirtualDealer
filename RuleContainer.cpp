@@ -27,6 +27,7 @@ bool RuleContainer::ParseRule(const char* line, Rule* rule) {
     } else {
         return false;
     }
+    LOG("rule ---  symbol = %s", pchar);
 
     //--- copy group
     pchar = StrRange(NULL, '<', '>', &cp);
@@ -35,6 +36,7 @@ bool RuleContainer::ParseRule(const char* line, Rule* rule) {
     } else {
         return false;
     }
+    LOG("rule ---  group = %s", pchar);
 
     //--- copy login
     pchar = StrRange(NULL, '<', '>', &cp);
@@ -47,6 +49,7 @@ bool RuleContainer::ParseRule(const char* line, Rule* rule) {
     } else {
         return false;
     }
+    LOG("rule ---  login = %s", pchar);
 
     //--- copy min_volume
     pchar = StrRange(NULL, '<', '>', &cp);
@@ -55,6 +58,7 @@ bool RuleContainer::ParseRule(const char* line, Rule* rule) {
     } else {
         rule->m_min_volume = -1;
     }
+    LOG("rule ---  min_volume = %s", pchar);
 
     //--- copy max_volume
     pchar = StrRange(NULL, '<', '>', &cp);
@@ -63,6 +67,7 @@ bool RuleContainer::ParseRule(const char* line, Rule* rule) {
     } else {
         rule->m_max_volume = -1;
     }
+    LOG("rule ---  max_volume = %s", pchar);
 
     //--- copy order_type
     pchar = StrRange(NULL, '<', '>', &cp);
@@ -71,6 +76,7 @@ bool RuleContainer::ParseRule(const char* line, Rule* rule) {
     } else {
         return false;
     }
+    LOG("rule ---  order_type = %s", pchar);
 
     //--- copy delay_milisecond
     pchar = StrRange(NULL, '<', '>', &cp);
@@ -79,6 +85,7 @@ bool RuleContainer::ParseRule(const char* line, Rule* rule) {
     } else {
         return false;
     }
+    LOG("rule ---  delay_milisecond = %s", pchar);
 
     //--- copy price_option
     pchar = StrRange(NULL, '<', '>', &cp);
@@ -87,6 +94,7 @@ bool RuleContainer::ParseRule(const char* line, Rule* rule) {
     } else {
         return false;
     }
+    LOG("rule ---  price_option = %s", pchar);
 
     LOG_INFO(rule);
     return true;

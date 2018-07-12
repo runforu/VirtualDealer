@@ -55,14 +55,13 @@ int APIENTRY MtSrvStartup(CServerInterface* server) {
 
     //--- initialize dealer helper
     Factory::GetProcessor()->Initialize();
-    LOG("VirtualDealer initialized by server.");
+
     return (TRUE);
 }
 //+------------------------------------------------------------------+
 //| Cleanup                                |
 //+------------------------------------------------------------------+
 void APIENTRY MtSrvCleanup() {
-    // noop
     Factory::SetServerInterface(NULL);
     Factory::GetProcessor()->Shutdown();
 }

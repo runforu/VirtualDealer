@@ -106,7 +106,7 @@ void Loger::out(const int code, LPCSTR ip, const Rule* rule) {
                "                Rule: [\n"
                "                        m_symbol =             %s\n"
                "                        m_group =              %s\n"
-               "                        m_login =              %s\n"
+               "                        m_login =              %d\n"
                "                        m_min_volume =         %d\n"
                "                        m_max_volume =         %d\n"
                "                        m_order_type =         %d\n"

@@ -60,8 +60,7 @@ private:
 public:
     void Initialize();
     inline void Reinitialize() {
-        Initialize();
-        // InterlockedExchange(&m_reinitialize_flag, 1);
+        InterlockedExchange(&m_reinitialize_flag, 1);
     }
     void ShowStatus();
     void ProcessRequest(RequestInfo* request);

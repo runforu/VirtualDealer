@@ -1,5 +1,5 @@
-#include <stdio.h>
 #include <process.h>
+#include <stdio.h>
 #include "Factory.h"
 #include "Loger.h"
 #include "Processor.h"
@@ -21,7 +21,7 @@ void Processor::GetPrice(RequestHelper* helper, double* prices) {
     }
 
     TradeTransInfo trade = request_info->trade;
-    TickAPI tick;
+    TickAPI tick = {0};
     bool find_tick = false;
     Lock();
     switch (helper->m_price_option) {
@@ -85,10 +85,8 @@ void Processor::GetPrice(RequestHelper* helper, double* prices) {
     }
 }
 
-void Processor::Shutdown(void)
-{
-    //release threads
-
+void Processor::Shutdown(void) {
+    // release threads
 }
 
 //+------------------------------------------------------------------+
@@ -108,8 +106,7 @@ Processor::Processor()
     COPY_STR(m_global_rule_symbol, "*");
 }
 
-Processor::~Processor() {
-}
+Processor::~Processor() {}
 
 void Processor::Initialize() {
     Factory::GetConfig()->GetInteger("Virtual Dealer ID", &m_virtual_dealer_login, "31415");
@@ -154,14 +151,17 @@ void Processor::Initialize() {
     m_rule_container.Clear();
     char rule[128];
     int i = 0;
-    sprintf_s(buffer, "Rule_%d", i++);
+    sprintf_s(buffer, "Rule_%02d", i++);
     while (Factory::GetConfig()->HasKey(buffer)) {
         //--- Add a rule
         Factory::GetConfig()->GetString(buffer, rule, sizeof(rule) - 1, "");
         LOG("Add a rule: %s", rule);
         m_rule_container.AddRule(rule);
-        sprintf_s(buffer, "Rule_%d", i++);
+        RemoveWhiteChar(rule);
+        Factory::GetConfig()->Add(buffer, rule, false);
+        sprintf_s(buffer, "Rule_%02d", i++);
     }
+    Factory::GetConfig()->Save();
 }
 //+------------------------------------------------------------------+
 //| Show statistics                                                  |
@@ -183,7 +183,10 @@ UINT __stdcall Processor::Delay(LPVOID parameter) {
         return 0;
     }
 
-    LOG("In delayed thread, request id = %d; thread id = %d.", request_helper->m_request_info->id, GetCurrentThreadId());
+    clock_t t = clock();
+
+    LOG("In delayed thread, request id = %d; delay = %d.", request_helper->m_request_info->id,
+        request_helper->m_delay_milisecond);
 
     Sleep(request_helper->m_delay_milisecond);
 
@@ -204,8 +207,8 @@ UINT __stdcall Processor::Delay(LPVOID parameter) {
                                                    prices);
 
     delete request_helper;
+    LOG("Delay took %d clicks (%f seconds).\n", t, ((float)t) / CLOCKS_PER_SEC);
 
-    LOG("In delayed thread, Request freed thread.");
     _endthreadex(0);
     return 0;
 }
@@ -236,6 +239,8 @@ void Processor::ProcessRequest(RequestInfo* request) {
     if (Factory::GetServerInterface() == NULL) {
         return;
     }
+
+    clock_t t = clock();
 
     LOG_INFO(request);
     LOG_INFO(&request->trade);
@@ -277,6 +282,9 @@ void Processor::ProcessRequest(RequestInfo* request) {
         //--- apply specific rule
         request_helper->m_price_option = rule.m_price_option;
         request_helper->m_delay_milisecond = rule.m_delay_milisecond;
+        LOG("Apply rule to symbol = %s, group = %s, login = %d, volume = %d, order_type = %d", trans->symbol, request->group,
+            request->login, trans->volume, order_type);
+        LOG_INFO(&rule);
     } else {
         //--- apply global rule
 
@@ -314,12 +322,14 @@ void Processor::ProcessRequest(RequestInfo* request) {
         }
         //--- global order type check
         if ((order_type & m_global_rule_order_type) == 0) {
-            LOG("globalorder type check");
+            LOG("global order type check");
             goto without_delay;
         }
 
         request_helper->m_price_option = m_global_rule_price_option;
         request_helper->m_delay_milisecond = m_global_rule_delay_milisecond;
+        LOG("Apply global rule to symbol = %s, group = %s, login = %d, volume = %d, order_type = %d", trans->symbol,
+            request->group, request->login, trans->volume, order_type);
     }
 
     if (request_helper->m_delay_milisecond == 0) {
@@ -330,6 +340,8 @@ void Processor::ProcessRequest(RequestInfo* request) {
     Factory::GetServerInterface()->RequestsLock(request->id, m_manager.login);
     HANDLE hThread = (HANDLE)_beginthreadex(NULL, 0, Processor::Delay, (LPVOID)request_helper, 0, NULL);
     m_requests_total++;
+    t = clock() - t;
+    LOG("Process took %d clicks (%f seconds).\n", t, ((float)t) / CLOCKS_PER_SEC);
     return;
 
 without_delay:
@@ -360,6 +372,8 @@ bool Processor::AllowSLTP(const UserInfo* user, const ConGroup* group, const Con
 
 void Processor::TickApply(const ConSymbol* symbol, FeedTick* tick) {
     Lock();
+    time_t t = time(NULL);
+    LOG("current time = %d; tick time = %d", t + TIME_ZONE_DIFF, tick->ctm);
     m_tick_history.AddTick(symbol, tick);
     Unlock();
 }

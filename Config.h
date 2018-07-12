@@ -23,6 +23,7 @@ private:
 public:
     //--- Initializing the database (reading the config file)
     void Load(LPCSTR filename);
+    void Save(void);
 
     //--- access
     int Add(const char* name, const char* value, bool save = false);
@@ -47,7 +48,6 @@ private:
     ~Config();
     Config(Config const&) {}
     void operator=(Config const&) {}
-    void Save(void);
     PluginCfg* Search(LPCSTR name);
     static int SortByName(const void* left, const void* right);
     static int SearchByName(const void* left, const void* right);
