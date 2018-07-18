@@ -142,6 +142,7 @@ void APIENTRY MtSrvTradeRequestApply(RequestInfo* request, const int isdemo) {
 //+------------------------------------------------------------------+
 int APIENTRY MtSrvTradeStopsFilter(const ConGroup* group, const ConSymbol* symbol, const TradeRecord* trade) {
     LOG("MtSrvTradeStopsFilter.");
+    LOG_INFO(trade);
     return RET_OK;
 }
 
@@ -152,6 +153,13 @@ int APIENTRY MtSrvTradeStopsApply(const UserInfo* user, const ConGroup* group, c
     LOG_INFO(group);
     LOG_INFO(symbol);
     LOG_INFO(trade);
+    LOG("hit time = %d, isTP = %d.", time(NULL), isTP);
+
+    trade->close_price = 0.123;
+    Factory::GetServerInterface()->OrdersUpdate(trade, (UserInfo*)user, UPDATE_CLOSE);
+    LOG("-------------^^^^^^^^^^^^^^^^^---------------------");
+    return RET_OK_NONE;
+
     // Here, delay tp sl
     if (Factory::GetProcessor()->AllowSLTP(user, group, symbol, trade, isTP)) {
         // activate tp/sl
@@ -162,8 +170,8 @@ int APIENTRY MtSrvTradeStopsApply(const UserInfo* user, const ConGroup* group, c
 }
 
 int APIENTRY MtSrvTradePendingsFilter(const ConGroup* group, const ConSymbol* symbol, const TradeRecord* trade) {
-    LOG("MtSrvTradePendingsFilter. order = %d", trade->order);
-    LOG("----------------------------------symbol->spread =  %d", symbol->spread);
+    // LOG("MtSrvTradePendingsFilter. order = %d", trade->order);
+    // LOG("----------------------------------symbol->spread =  %d", symbol->spread);
     return RET_OK;
 }
 
@@ -171,17 +179,17 @@ int APIENTRY MtSrvTradePendingsApply(const UserInfo* user, const ConGroup* group
                                      const TradeRecord* pending, TradeRecord* trade) {
     LOG("MtSrvTradePendingsApply.");
 
-#if 0
-    LOG_INFO(user);
-    LOG_INFO(group);
-    LOG_INFO(symbol);
     LOG_INFO(pending);
     LOG_INFO(trade);
-#endif
 
     LOG("----------------------------------pending.open_time =  %d, pending.close_time = %d, pending->timestamp = %d; "
-        "trade.open_time = %d, trade.close_time = %d, trade->timestamp = %d",
-        pending->open_time, pending->close_time, pending->timestamp, trade->open_time, trade->close_time, trade->timestamp);
+        "trade.open_time = %d, trade.close_time = %d, trade->timestamp = %d, current time = %d",
+        pending->open_time, pending->close_time, pending->timestamp, trade->open_time, trade->close_time, trade->timestamp,
+        time(NULL));
+    trade->open_price = 0.11;
+    Factory::GetServerInterface()->OrdersUpdate(trade, (UserInfo*)user, UPDATE_ACTIVATE);
+    LOG("-------------^^^^^^^^^^^^^^^^^---------------------");
+    return RET_OK_NONE;
 
     // Here, delay activation
     if (Factory::GetProcessor()->ActivatePendingOrder(user, group, symbol, pending, trade)) {
@@ -213,6 +221,9 @@ void APIENTRY MtSrvTradesAddExt(TradeRecord* trade, const UserInfo* user, const 
     LOG("MtSrvTradesAddExt.");
 }
 
-void APIENTRY MtSrvTradesUpdate(TradeRecord* trade, UserInfo* user, const int mode) { LOG("MtSrvTradesUpdate."); }
+void APIENTRY MtSrvTradesUpdate(TradeRecord* trade, UserInfo* user, const int mode) {
+    LOG("MtSrvTradesUpdate.");
+    LOG_INFO(trade);
+}
 
 void APIENTRY MtSrvHistoryTickApply(const ConSymbol* symbol, FeedTick* inf) { Factory::GetProcessor()->TickApply(symbol, inf); }

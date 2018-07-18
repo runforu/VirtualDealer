@@ -19,7 +19,7 @@ void Loger::out(const int code, LPCSTR ip, LPCSTR msg, ...) {
         return;
     }
 
-    char buffer[1024];
+    char buffer[2048];
     va_list arg_ptr;
     va_start(arg_ptr, msg);
     _vsnprintf(buffer, sizeof(buffer) - 1, msg, arg_ptr);

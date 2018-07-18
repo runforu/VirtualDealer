@@ -4,17 +4,19 @@
 #include "Config.h"
 #include "RuleContainer.h"
 #include "TickHistory.h"
-
-#define TIME_ZONE_DIFF 10800
-
-struct DelayedOrder {
-    int order;
-    time_t m_firt_hit;
-    double m_worst_price[2];
-};
+#include "TrigerPriceManager.h"
 
 struct RequestHelper {
     RequestInfo* m_request_info;
+    PriceOption m_price_option;
+    time_t m_start_time;
+    int m_delay_milisecond;
+};
+
+struct TrigerDelayHelper {
+    UserInfo* m_user_info;
+    const TradeRecord * m_pending_trade_record;
+    TradeRecord * m_trade_record;
     PriceOption m_price_option;
     time_t m_start_time;
     int m_delay_milisecond;
@@ -55,13 +57,11 @@ private:
     Synchronizer m_sync;
 
     //--- TODO
-    HANDLE m_thread_handle[32]; 
+    HANDLE m_thread_handle[32];
 
 public:
     void Initialize();
-    inline void Reinitialize() {
-        InterlockedExchange(&m_reinitialize_flag, 1);
-    }
+    inline void Reinitialize() { InterlockedExchange(&m_reinitialize_flag, 1); }
     void ShowStatus();
     void ProcessRequest(RequestInfo* request);
     bool ActivatePendingOrder(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol, const TradeRecord* pending,
@@ -71,29 +71,26 @@ public:
 
     inline void Lock() { m_sync.Lock(); }
     inline void Unlock() { m_sync.Unlock(); }
-
-    void GetPrice(RequestHelper* helper, double* prices);
-
+    
     void Shutdown(void);
 
 private:
     Processor();
     ~Processor();
 
+    //--- Hanlde triger order price like pending, sl and tp, trade cmd in {OP_BUY,OP_SELL,OP_BUY_LIMIT,OP_SELL_LIMIT,OP_BUY_STOP,OP_SELL_STOP}
+    // price is the trigered price.
+    double GetPrice(TrigerDelayHelper* helper, double trigered_price);
+
+    void GetPrice(RequestHelper* helper, double* prices);
     static int GetSpreadDiff(RequestInfo* request);
-    static int GetSpreadDiff(char* group);
+    static int GetSpreadDiff(const char* group);
     static UINT __stdcall Delay(LPVOID parameter);
-    static bool SpreadDiff(char* group, char* symbol, TickAPI* tick);
-
-private:  // TODO
-    //--- delay activation of pending order
-    DelayedOrder m_pending_order[256];
-
-    //--- delay stop loss
-    DelayedOrder m_stop_loss[256];
-
-    //--- delay take profit
-    DelayedOrder m_take_profit[256];
+    static UINT __stdcall DelaySlTpTriger(LPVOID parameter);
+    static UINT __stdcall DelayPendingTriger(LPVOID parameter);
+    static bool SpreadDiff(const char* group, char* symbol, TickAPI* tick);
+    bool GetDelayOption(const char* symbol, const char* group, int client_login, int volume, int order_type,
+                        PriceOption& price_option, int& delay_milisecond);
 };
 
 //+------------------------------------------------------------------+
