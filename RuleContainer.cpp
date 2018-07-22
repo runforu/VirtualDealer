@@ -24,8 +24,7 @@ bool RuleContainer::ParseRule(const char* line, Rule* rule) {
     char* pchar = StrRange(buf, '<', '>', &cp);
     if (pchar != NULL && strlen(pchar) != 0) {
         COPY_STR(rule->m_group, pchar);
-    }
-    else {
+    } else {
         return false;
     }
     LOG("rule ---  group = %s", pchar);
@@ -34,8 +33,7 @@ bool RuleContainer::ParseRule(const char* line, Rule* rule) {
     pchar = StrRange(NULL, '<', '>', &cp);
     if (pchar != NULL && strlen(pchar) != 0) {
         COPY_STR(rule->m_symbol, pchar);
-    }
-    else {
+    } else {
         return false;
     }
     LOG("rule ---  symbol = %s", pchar);
@@ -78,7 +76,7 @@ bool RuleContainer::ParseRule(const char* line, Rule* rule) {
     } else {
         return false;
     }
-    LOG("rule ---  order_type = %s, type = %d ", pchar, rule->m_order_type);
+    LOG("rule ---  order_type = %s, [%s]", pchar, ORDERTYPE(rule->m_order_type));
 
     //--- copy delay_milisecond
     pchar = StrRange(NULL, '<', '>', &cp);
@@ -96,15 +94,18 @@ bool RuleContainer::ParseRule(const char* line, Rule* rule) {
     } else {
         return false;
     }
-    LOG("rule ---  price_option = %s", pchar);
-
-    LOG_INFO(rule);
+    LOG("rule ---  price_option = %s [%s]", pchar, PRICEOPTION(rule->m_price_option));
+    
     return true;
 }
 
-bool RuleContainer::AddRule(const char* rule_string) {
+bool RuleContainer::AddRule(const char* rule_string, const char* name) {
     Rule rule;
     if (ParseRule(rule_string, &rule)) {
+        if (name != NULL) {
+            COPY_STR(rule.m_name, name);
+        }
+        LOG_INFO(&rule);
         m_sync.Lock();
         m_rules[m_rule_total++] = rule;
         m_sync.Unlock();
@@ -122,34 +123,30 @@ void RuleContainer::Clear() {
 
 bool RuleContainer::Search(const char* symbol, const char* group, int client_login, int volume, int order_type, Rule* rule) {
     m_sync.Lock();
-    LOG("Search symbole = %s, group = %s, login = %d, volume = %d, order type = %d", symbol, group, client_login, volume, order_type );
+    LOG("Search symbole = %s, group = %s, login = %d, volume = %d, order type = %s", symbol, group, client_login, volume,
+        ORDERTYPE(order_type));
     for (int i = 0; i < m_rule_total; i++) {
+        LOG("--> rule name = %s", this->m_rules[i].m_name);
         if (strcmp(this->m_rules[i].m_symbol, "*") != 0 && strcmp(symbol, this->m_rules[i].m_symbol) != 0) {
-            LOG("rule symbole = %s", this->m_rules[i].m_symbol);
             continue;
         }
         if (strcmp("*", this->m_rules[i].m_group) != 0 && strcmp(group, this->m_rules[i].m_group) != 0) {
-            LOG("rule group = %s", this->m_rules[i].m_group);
             continue;
         }
         if (this->m_rules[i].m_login != -1 && this->m_rules[i].m_login != client_login) {
-            LOG("rule group = %d", this->m_rules[i].m_login);
             continue;
         }
         if (this->m_rules[i].m_min_volume != -1) {
             if (volume < this->m_rules[i].m_min_volume) {
-                LOG("rule min volume = %d", this->m_rules[i].m_min_volume);
                 continue;
             }
         }
         if (this->m_rules[i].m_max_volume != -1) {
             if (volume > this->m_rules[i].m_max_volume) {
-                LOG("rule max volume = %d", this->m_rules[i].m_max_volume);
                 continue;
             }
         }
         if ((order_type & this->m_rules[i].m_order_type) == 0) {
-            LOG("rule order type = %d", this->m_rules[i].m_order_type);
             continue;
         }
 

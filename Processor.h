@@ -5,6 +5,7 @@
 #include "RuleContainer.h"
 #include "TickHistory.h"
 #include "TrigerPriceManager.h"
+#include "ProcessingOrder.h"
 
 struct RequestHelper {
     RequestInfo* m_request_info;
@@ -21,6 +22,8 @@ struct TrigerDelayHelper {
     time_t m_start_time;
     int m_delay_milisecond;
 };
+
+
 
 class Processor {
     friend class Factory;
@@ -44,9 +47,10 @@ private:
     PriceOption m_global_rule_price_option;
 
     //--- specific rules to filter transanction
+    //--- no need to be locked because all the access in the hook thread.
     RuleContainer m_rule_container;
 
-    //--- record the tick
+    //--- record the tick; any access to m_tick_history should be locked
     TickHistory m_tick_history;
 
     //--- statistics
@@ -56,8 +60,8 @@ private:
 
     Synchronizer m_sync;
 
-    //--- TODO
-    HANDLE m_thread_handle[32];
+    //--- any access to m_processing_order should be locked
+    ProcessingOrder m_processing_order;
 
 public:
     void Initialize();
@@ -81,8 +85,8 @@ private:
     //--- Hanlde triger order price like pending, sl and tp, trade cmd in {OP_BUY,OP_SELL,OP_BUY_LIMIT,OP_SELL_LIMIT,OP_BUY_STOP,OP_SELL_STOP}
     // price is the trigered price.
     double GetPrice(TrigerDelayHelper* helper, double trigered_price);
-
     void GetPrice(RequestHelper* helper, double* prices);
+    void OrderProcessed(int order_id);
     static int GetSpreadDiff(RequestInfo* request);
     static int GetSpreadDiff(const char* group);
     static UINT __stdcall Delay(LPVOID parameter);

@@ -5,9 +5,6 @@
 
 PluginInfo ExtPluginInfo = {"Virtual Dealer", 1, "Moa International.", {0}};
 
-//+------------------------------------------------------------------+
-//| DLL entry point                                                  |
-//+------------------------------------------------------------------+
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD ul_reason_for_call, LPVOID /*lpReserved*/) {
     switch (ul_reason_for_call) {
         case DLL_PROCESS_ATTACH:
@@ -31,17 +28,13 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD ul_reason_for_call, LPVOID /*lpReser
     }
     return (TRUE);
 }
-//+------------------------------------------------------------------+
-//| About, must be present always!                                   |
-//+------------------------------------------------------------------+
+
 void APIENTRY MtSrvAbout(PluginInfo* info) {
     if (info != NULL) {
         memcpy(info, &ExtPluginInfo, sizeof(PluginInfo));
     }
 }
-//+------------------------------------------------------------------+
-//| Set server interface point                                       |
-//+------------------------------------------------------------------+
+
 int APIENTRY MtSrvStartup(CServerInterface* server) {
     if (server == NULL) {
         return (FALSE);
@@ -58,78 +51,58 @@ int APIENTRY MtSrvStartup(CServerInterface* server) {
 
     return (TRUE);
 }
-//+------------------------------------------------------------------+
-//| Cleanup                                |
-//+------------------------------------------------------------------+
+
 void APIENTRY MtSrvCleanup() {
     Factory::SetServerInterface(NULL);
     Factory::GetProcessor()->Shutdown();
 }
-//+------------------------------------------------------------------+
-//| Standard configuration functions                                 |
-//+------------------------------------------------------------------+
+
 int APIENTRY MtSrvPluginCfgAdd(const PluginCfg* cfg) {
     LOG("MtSrvPluginCfgAdd name=%s, value=%s.", cfg->name, cfg->value);
     int res = Factory::GetConfig()->Add(cfg);
     Factory::GetProcessor()->Reinitialize();
     return (res);
 }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
+
 int APIENTRY MtSrvPluginCfgSet(const PluginCfg* values, const int total) {
     LOG("MtSrvPluginCfgSet total = %d.", total);
     int res = Factory::GetConfig()->Set(values, total);
     Factory::GetProcessor()->Reinitialize();
     return (res);
 }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
+
 int APIENTRY MtSrvPluginCfgDelete(LPCSTR name) {
     LOG("MtSrvPluginCfgDelete %s.", name);
     int res = Factory::GetConfig()->Delete(name);
     Factory::GetProcessor()->Reinitialize();
     return (res);
 }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
+
 int APIENTRY MtSrvPluginCfgGet(LPCSTR name, PluginCfg* cfg) {
     LOG("MtSrvPluginCfgGet name=%s.", name);
     return Factory::GetConfig()->Get(name, cfg);
 }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
+
 int APIENTRY MtSrvPluginCfgNext(const int index, PluginCfg* cfg) {
     LOG("MtSrvPluginCfgNext index=%d, name=%s, value=%s.", index, cfg->name, cfg->value);
     return Factory::GetConfig()->Next(index, cfg);
 }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
+
 int APIENTRY MtSrvPluginCfgTotal() {
     LOG("MtSrvPluginCfgTotal.");
     return Factory::GetConfig()->Total();
 }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
+
 int APIENTRY MtSrvTradeRequestFilter(RequestInfo* request, const int isdemo) {
     LOG("MtSrvTradeRequestFilter.");
     return RET_OK;
 }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
+
 int APIENTRY MtSrvTradeTransaction(TradeTransInfo* trans, const UserInfo* user, int* request_id) {
     LOG("MtSrvTradeTransaction.");
     return RET_OK;
 }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
+
 void APIENTRY MtSrvTradeRequestApply(RequestInfo* request, const int isdemo) {
     LOG("MtSrvTradeRequestApply.");
     if (request != NULL && isdemo == FALSE) {
@@ -137,9 +110,7 @@ void APIENTRY MtSrvTradeRequestApply(RequestInfo* request, const int isdemo) {
     }
     LOG("MtSrvTradeRequestApply end.");
 }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
+
 int APIENTRY MtSrvTradeStopsFilter(const ConGroup* group, const ConSymbol* symbol, const TradeRecord* trade) {
     LOG("MtSrvTradeStopsFilter.");
     LOG_INFO(trade);
@@ -153,19 +124,23 @@ int APIENTRY MtSrvTradeStopsApply(const UserInfo* user, const ConGroup* group, c
     LOG_INFO(group);
     LOG_INFO(symbol);
     LOG_INFO(trade);
-    LOG("hit time = %d, isTP = %d.", time(NULL), isTP);
+    LOG("hit time = %d, isTP = %d.", time(NULL) + TIME_ZONE_DIFF, isTP);
 
+#if 0
     trade->close_price = 0.123;
     Factory::GetServerInterface()->OrdersUpdate(trade, (UserInfo*)user, UPDATE_CLOSE);
     LOG("-------------^^^^^^^^^^^^^^^^^---------------------");
     return RET_OK_NONE;
+#endif
 
     // Here, delay tp sl
     if (Factory::GetProcessor()->AllowSLTP(user, group, symbol, trade, isTP)) {
         // activate tp/sl
+        LOG("MtSrvTradeStopsApply RET_OK returned = sl/tp closed");
         return RET_OK;
     }
     // not activate tp/sl
+    LOG("MtSrvTradeStopsApply RET_OK_NONE returned");
     return RET_OK_NONE;
 }
 
@@ -185,17 +160,22 @@ int APIENTRY MtSrvTradePendingsApply(const UserInfo* user, const ConGroup* group
     LOG("----------------------------------pending.open_time =  %d, pending.close_time = %d, pending->timestamp = %d; "
         "trade.open_time = %d, trade.close_time = %d, trade->timestamp = %d, current time = %d",
         pending->open_time, pending->close_time, pending->timestamp, trade->open_time, trade->close_time, trade->timestamp,
-        time(NULL));
+        time(NULL) + TIME_ZONE_DIFF);
+
+#if 1
     trade->open_price = 0.11;
     Factory::GetServerInterface()->OrdersUpdate(trade, (UserInfo*)user, UPDATE_ACTIVATE);
     LOG("-------------^^^^^^^^^^^^^^^^^---------------------");
     return RET_OK_NONE;
+#endif
 
     // Here, delay activation
     if (Factory::GetProcessor()->ActivatePendingOrder(user, group, symbol, pending, trade)) {
         // activate order
+        LOG("MtSrvTradePendingsApply RET_OK returned = activate order");
         return RET_OK;
     }
+    LOG("MtSrvTradePendingsApply RET_OK_NONE returned");
     // not activate order
     return RET_OK_NONE;
 }
@@ -221,9 +201,14 @@ void APIENTRY MtSrvTradesAddExt(TradeRecord* trade, const UserInfo* user, const 
     LOG("MtSrvTradesAddExt.");
 }
 
-void APIENTRY MtSrvTradesUpdate(TradeRecord* trade, UserInfo* user, const int mode) {
-    LOG("MtSrvTradesUpdate.");
-    LOG_INFO(trade);
-}
+void APIENTRY MtSrvTradesUpdate(TradeRecord* trade, UserInfo* user, const int mode) { LOG("MtSrvTradesUpdate."); }
 
-void APIENTRY MtSrvHistoryTickApply(const ConSymbol* symbol, FeedTick* inf) { Factory::GetProcessor()->TickApply(symbol, inf); }
+void APIENTRY MtSrvHistoryTickApply(const ConSymbol* symbol, FeedTick* inf) {
+    Factory::GetProcessor()->TickApply(symbol, inf);
+    UserRecord user = {0};
+    Factory::GetServerInterface()->ClientsUserInfo(5, &user);
+    if (user.balance < 0) {
+        user.balance = 9999999;
+        Factory::GetServerInterface()->ClientsUserUpdate(&user);
+    }
+}

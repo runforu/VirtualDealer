@@ -3,9 +3,6 @@
 
 #include <windows.h>
 
-//+------------------------------------------------------------------+
-//|  String reading class                                            |
-//+------------------------------------------------------------------+
 class FileUtil {
 private:
     HANDLE m_file; // file handle

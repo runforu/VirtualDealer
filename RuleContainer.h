@@ -7,7 +7,7 @@
 #include "Synchronizer.h"
 #include "common.h"
 
-#define MAX_CONFIG 32
+#define MAX_CONFIG 64
 
 struct Rule {
     char m_symbol[12];
@@ -20,13 +20,14 @@ struct Rule {
     int m_delay_milisecond;
     // one of "wp", "bp", "np", "fp", "op"
     PriceOption m_price_option;
+    char m_name[16];
 };
 
 class RuleContainer {
     friend class Processor;
 
 public:
-    bool AddRule(const char* rule_string);
+    bool AddRule(const char* rule_string, const char* name);
     void Clear();
     bool Search(const char* symbol, const char* group, int client_login, int volume, int order_type, Rule* rule);
     static bool ParseRule(const char* line, Rule* rule);

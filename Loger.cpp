@@ -4,15 +4,63 @@
 #include "Loger.h"
 
 #ifdef _RELEASE_LOG_
-static char* trans_type[] = {
-    "TT_ORDER_IE_OPEN",      "TT_ORDER_REQ_OPEN",  "TT_ORDER_MK_OPEN",     "TT_ORDER_PENDING_OPEN", "TT_ORDER_IE_CLOSE",
-    "TT_ORDER_REQ_CLOSE",    "TT_ORDER_MK_CLOSE",  "TT_ORDER_MODIFY",      "TT_ORDER_DELETE",       "TT_ORDER_CLOSE_BY",
-    "TT_ORDER_CLOSE_ALL",    "TT_BR_ORDER_OPEN",   "TT_BR_ORDER_CLOSE",    "TT_BR_ORDER_DELETE",    "TT_BR_ORDER_CLOSE_BY",
-    "TT_BR_ORDER_CLOSE_ALL", "TT_BR_ORDER_MODIFY", "TT_BR_ORDER_ACTIVATE", "TT_BR_ORDER_COMMENT",   "TT_BR_BALANCE",
-};
 
-static char* trans_cmd[] = {"OP_BUY",      "OP_SELL",      "OP_BUY_LIMIT", "OP_SELL_LIMIT",
-                            "OP_BUY_STOP", "OP_SELL_STOP", "OP_BALANCE",   "OP_CREDIT"};
+const char* Loger::TradeTypeStr(int trade_type) {
+    static char* trans_type_str[] = {
+        "TT_ORDER_IE_OPEN",      "TT_ORDER_REQ_OPEN",  "TT_ORDER_MK_OPEN",     "TT_ORDER_PENDING_OPEN", "TT_ORDER_IE_CLOSE",
+        "TT_ORDER_REQ_CLOSE",    "TT_ORDER_MK_CLOSE",  "TT_ORDER_MODIFY",      "TT_ORDER_DELETE",       "TT_ORDER_CLOSE_BY",
+        "TT_ORDER_CLOSE_ALL",    "TT_BR_ORDER_OPEN",   "TT_BR_ORDER_CLOSE",    "TT_BR_ORDER_DELETE",    "TT_BR_ORDER_CLOSE_BY",
+        "TT_BR_ORDER_CLOSE_ALL", "TT_BR_ORDER_MODIFY", "TT_BR_ORDER_ACTIVATE", "TT_BR_ORDER_COMMENT",   "TT_BR_BALANCE",
+    };
+    return trans_type_str[trade_type - 64];
+}
+
+const char* Loger::TradeCmdStr(int trade_cmd) {
+    static char* trans_cmd_str[] = {"OP_BUY",      "OP_SELL",      "OP_BUY_LIMIT", "OP_SELL_LIMIT",
+                                    "OP_BUY_STOP", "OP_SELL_STOP", "OP_BALANCE",   "OP_CREDIT"};
+    return trans_cmd_str[trade_cmd];
+}
+
+const char* Loger::PriceOptionStr(PriceOption price_option) {
+    static char* price_option_str[] = {"PO_WORST_PRICE", "PO_BEST_PRICE", "PO_FIRST_PRICE", "PO_NEXT_PRICE", "PO_ORDER_PRICE"};
+    return price_option_str[price_option];
+}
+
+const char* Loger::OrderTypeStr(int order_type) {
+    static char* price_option_str[] = {"OT_NONE",
+                                       "OT_OPEN",
+                                       "OT_CLOSE",
+                                       "OT_CLOSE|OT_OPEN"
+                                       "OT_TP",
+                                       "OT_TP|OT_OPEN",
+                                       "OT_TP|OT_CLOSE",
+                                       "OT_TP|OT_CLOSE|OT_OPEN",
+                                       "OT_SL",
+                                       "OT_SL|OT_OPEN",
+                                       "OT_SL|OT_CLOSE",
+                                       "OT_SL|OT_CLOSE|OT_OPEN",
+                                       "OT_SL|OT_TP",
+                                       "OT_SL|OT_TP|OT_OPEN",
+                                       "OT_SL|OT_TP|OT_CLOSE",
+                                       "OT_SL|OT_TP|OT_CLOSE|OT_OPEN",
+                                       "OT_PENDING",
+                                       "OT_PENDING|OT_OPEN",
+                                       "OT_PENDING|OT_CLOSE",
+                                       "OT_PENDING|OT_CLOSE|OT_OPEN"
+                                       "OT_PENDING|OT_TP",
+                                       "OT_PENDING|OT_TP|OT_OPEN",
+                                       "OT_PENDING|OT_TP|OT_CLOSE",
+                                       "OT_PENDING|OT_TP|OT_CLOSE|OT_OPEN",
+                                       "OT_PENDING|OT_SL",
+                                       "OT_PENDING|OT_SL|OT_OPEN",
+                                       "OT_PENDING|OT_SL|OT_CLOSE",
+                                       "OT_PENDING|OT_SL|OT_CLOSE|OT_OPEN",
+                                       "OT_PENDING|OT_SL|OT_TP",
+                                       "OT_PENDING|OT_SL|OT_TP|OT_OPEN",
+                                       "OT_PENDING|OT_SL|OT_TP|OT_CLOSE",
+                                       "OT_ALL"};
+    return price_option_str[order_type];
+}
 
 void Loger::out(const int code, LPCSTR ip, LPCSTR msg, ...) {
     if (Factory::GetServerInterface() == NULL || msg == NULL) {
@@ -30,7 +78,7 @@ void Loger::out(const int code, LPCSTR ip, LPCSTR msg, ...) {
 
 void Loger::out(const int code, LPCSTR ip, const RequestInfo* request) {
     Loger::out(code, ip,
-               "                RequestInfo: [\n"
+               " ----->   RequestInfo: [\n"
                "                        id =               %d\n"
                "                        status =           %d\n"
                "                        time =             %d\n"
@@ -50,7 +98,7 @@ void Loger::out(const int code, LPCSTR ip, const RequestInfo* request) {
 
 void Loger::out(const int code, LPCSTR ip, const TradeTransInfo* transaction) {
     Loger::out(code, ip,
-               "                TradeTransInfo: [\n"
+               " ----->   TradeTransInfo: [\n"
                "                        type =          %s\n"
                "                        flags =         %d\n"
                "                        cmd =           %s\n"
@@ -64,14 +112,14 @@ void Loger::out(const int code, LPCSTR ip, const TradeTransInfo* transaction) {
                "                        ie_deviation =  %d\n"
                "                        comment =       %s\n"
                "                        expiration =    %d ].",
-               transaction->type >= 64 ? trans_type[transaction->type - 64] : "Other Type", transaction->flags,
-               trans_cmd[transaction->cmd], transaction->order, transaction->orderby, transaction->symbol, transaction->volume,
+               transaction->type >= 64 ? TradeTypeStr(transaction->type) : "Other Type", transaction->flags,
+               TradeCmdStr(transaction->cmd), transaction->order, transaction->orderby, transaction->symbol, transaction->volume,
                transaction->price, transaction->sl, transaction->tp, transaction->ie_deviation, transaction->comment,
                transaction->expiration);
 }
 void Loger::out(const int code, LPCSTR ip, const UserInfo* user_info) {
     Loger::out(code, ip,
-               "                UserInfo: [\n"
+               " ----->   UserInfo: [\n"
                "                        login =                  %d\n"
                "                        group =                  %s\n"
                "                        password =               %s\n"
@@ -103,22 +151,22 @@ void Loger::out(const int code, LPCSTR ip, const TickAPI* tick) {
 
 void Loger::out(const int code, LPCSTR ip, const Rule* rule) {
     Loger::out(code, ip,
-               "                Rule: [\n"
+               " ----->   %s : [\n"
                "                        m_symbol =             %s\n"
                "                        m_group =              %s\n"
                "                        m_login =              %d\n"
                "                        m_min_volume =         %d\n"
                "                        m_max_volume =         %d\n"
-               "                        m_order_type =         %d\n"
+               "                        m_order_type =         %s\n"
                "                        m_delay_milisecond =   %d\n"
-               "                        m_price_option =       %d\n",
-               rule->m_symbol, rule->m_group, rule->m_login, rule->m_min_volume, rule->m_max_volume, rule->m_order_type,
-               rule->m_delay_milisecond, rule->m_price_option);
+               "                        m_price_option =       %s ]",
+               rule->m_name, rule->m_symbol, rule->m_group, rule->m_login, rule->m_min_volume, rule->m_max_volume,
+               OrderTypeStr(rule->m_order_type), rule->m_delay_milisecond, PriceOptionStr(rule->m_price_option));
 }
 
 void Loger::out(const int code, LPCSTR ip, const TradeRecord* trade_record) {
     Loger::out(code, ip,
-               "                TradeRecord: [\n"
+               " ----->   TradeRecord: [\n"
                "                        order =            %d\n"
                "                        login =            %d\n"
                "                        symbol =           %s\n"
@@ -149,7 +197,7 @@ void Loger::out(const int code, LPCSTR ip, const TradeRecord* trade_record) {
                "                        margin_rate =      %f\n"
                "                        timestamp =        %d ].",
                trade_record->order, trade_record->login, trade_record->symbol, trade_record->digits,
-               trans_cmd[trade_record->cmd], trade_record->volume, trade_record->open_time, trade_record->state,
+               TradeCmdStr(trade_record->cmd), trade_record->volume, trade_record->open_time, trade_record->state,
                trade_record->open_price, trade_record->sl, trade_record->tp, trade_record->close_time, trade_record->gw_volume,
                trade_record->expiration, trade_record->reason, trade_record->commission, trade_record->commission_agent,
                trade_record->storage, trade_record->close_price, trade_record->profit, trade_record->taxes, trade_record->magic,
