@@ -1,5 +1,6 @@
 #include "TrigerPriceManager.h"
 #include "common.h"
+#include "Factory.h"
 
 bool TrigerOrderManager::AddPrice(const int order_id, double price, time_t first_time) {
     int index = FindTrigerOrderIndex(order_id);
@@ -71,7 +72,7 @@ bool TrigerOrderManager::FindLastPrice(const int order_id, double &price) {
 
 bool TrigerOrderManager::TimeExpired(const int order_id, int miliseconds) {
     TrigerOrder *triger_order = FindTrigerOrder(order_id);
-    if (triger_order == NULL || (time(NULL) + TIME_ZONE_DIFF) * 1000 - triger_order->m_first_hit * 1000 > miliseconds) {
+    if (triger_order == NULL || (Factory::GetServerInterface()->TradeTime()) * 1000 - triger_order->m_first_hit * 1000 > miliseconds) {
         return true;
     }
 

@@ -1,7 +1,6 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
-#define TIME_ZONE_DIFF 10800
 
 #define TERMINATE_STR(str) str[sizeof(str) - 1] = 0;
 #define COPY_STR(dst, src)                    \

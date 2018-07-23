@@ -2,10 +2,10 @@
 #define _PROCESSOR_H_
 
 #include "Config.h"
+#include "ProcessingOrder.h"
 #include "RuleContainer.h"
 #include "TickHistory.h"
 #include "TrigerPriceManager.h"
-#include "ProcessingOrder.h"
 
 struct RequestHelper {
     RequestInfo* m_request_info;
@@ -16,14 +16,12 @@ struct RequestHelper {
 
 struct TrigerDelayHelper {
     UserInfo* m_user_info;
-    const TradeRecord * m_pending_trade_record;
-    TradeRecord * m_trade_record;
+    const TradeRecord* m_pending_trade_record;
+    TradeRecord* m_trade_record;
     PriceOption m_price_option;
     time_t m_start_time;
     int m_delay_milisecond;
 };
-
-
 
 class Processor {
     friend class Factory;
@@ -35,6 +33,8 @@ private:
     //--- configurations
     int m_virtual_dealer_login;
     int m_disable_virtual_dealer;
+
+    int m_auto_test;
 
     //--- default rule to filter transanction
     char m_global_rule_symbol[12];
@@ -64,7 +64,6 @@ private:
     ProcessingOrder m_processing_order;
 
 public:
-    void Initialize();
     inline void Reinitialize() { InterlockedExchange(&m_reinitialize_flag, 1); }
     void ShowStatus();
     void ProcessRequest(RequestInfo* request);
@@ -75,16 +74,16 @@ public:
 
     inline void Lock() { m_sync.Lock(); }
     inline void Unlock() { m_sync.Unlock(); }
-    
+    void Processor::Initialize();
     void Shutdown(void);
 
 private:
     Processor();
     ~Processor();
 
-    //--- Hanlde triger order price like pending, sl and tp, trade cmd in {OP_BUY,OP_SELL,OP_BUY_LIMIT,OP_SELL_LIMIT,OP_BUY_STOP,OP_SELL_STOP}
-    // price is the trigered price.
-    double GetPrice(TrigerDelayHelper* helper, double trigered_price);
+    //--- Hanlde triger order price like pending, sl and tp, trade cmd in
+    //{OP_BUY,OP_SELL,OP_BUY_LIMIT,OP_SELL_LIMIT,OP_BUY_STOP,OP_SELL_STOP} price is the trigered price.
+    double GetPrice(TrigerDelayHelper* helper, int cmd, double trigered_price);
     void GetPrice(RequestHelper* helper, double* prices);
     void OrderProcessed(int order_id);
     static int GetSpreadDiff(RequestInfo* request);

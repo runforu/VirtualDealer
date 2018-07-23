@@ -133,7 +133,7 @@ void Processor::OrderProcessed(int order_id) {
 }
 
 //--- only handle trigered order
-double Processor::GetPrice(TrigerDelayHelper* helper, double trigered_price) {
+double Processor::GetPrice(TrigerDelayHelper* helper, int cmd, double trigered_price) {
     TradeRecord* trade_record = helper->m_trade_record;
     const UserInfo* user_info = helper->m_user_info;
 
@@ -145,7 +145,7 @@ double Processor::GetPrice(TrigerDelayHelper* helper, double trigered_price) {
         double prices[] = {0.0, 0.0};
         if (Factory::GetServerInterface()->HistoryPricesGroup(trade_record->symbol, &user_info->grp, prices) == RET_OK) {
             //--- OP_BUY of tp/sl, OP_SELL_LIMIT, OP_SELL_STOP
-            if (trade_record->cmd == OP_BUY || trade_record->cmd == OP_SELL_LIMIT || trade_record->cmd == OP_SELL_STOP) {
+            if (cmd == OP_BUY || cmd == OP_SELL_LIMIT || cmd == OP_SELL_STOP) {
                 return prices[0];
             } else {  //--- OP_SELL of tp/sl, OP_BUY_LIMIT, OP_BUY_STOP
                 return prices[1];
@@ -158,28 +158,38 @@ double Processor::GetPrice(TrigerDelayHelper* helper, double trigered_price) {
     bool find_tick = false;
     Lock();
 
+    LOG(" cmd = %d, price option = %s", cmd, PRICEOPTION(helper->m_price_option));
+
     //--- OP_BUY of tp/sl, OP_SELL_LIMIT, OP_SELL_STOP
-    if (trade_record->cmd == OP_BUY || trade_record->cmd == OP_SELL_LIMIT || trade_record->cmd == OP_SELL_STOP) {
+    if (cmd == OP_BUY || cmd == OP_SELL_LIMIT || cmd == OP_SELL_STOP) {
         if (helper->m_price_option == PO_WORST_PRICE) {
             find_tick = Factory::GetProcessor()->m_tick_history.FindMinBid(trade_record->symbol, helper->m_start_time, tick);
+            LOG("PO_WORST_PRICE & FindMinBid  trigered_price = %f", trigered_price);
             if (find_tick && SpreadDiff(user_info->grp.group, trade_record->symbol, &tick) && tick.bid < trigered_price) {
+                LOG("PO_WORST_PRICE & FindMinBid");
                 trigered_price = tick.bid;
             }
         } else if (helper->m_price_option == PO_BEST_PRICE) {
             find_tick = Factory::GetProcessor()->m_tick_history.FindMaxBid(trade_record->symbol, helper->m_start_time, tick);
+            LOG("PO_BEST_PRICE & FindMaxBid  trigered_price = %f", trigered_price);
             if (find_tick && SpreadDiff(user_info->grp.group, trade_record->symbol, &tick) && tick.bid > trigered_price) {
+                LOG("PO_BEST_PRICE & FindMaxBid");
                 trigered_price = tick.bid;
             }
         }
-    } else {  //--- OP_SELL of tp/sl, OP_BUY_LIMIT, OP_BUY_STOP
+    } else if (cmd == OP_SELL || cmd == OP_BUY_LIMIT || cmd == OP_BUY_STOP) {  //--- OP_SELL of tp/sl, OP_BUY_LIMIT, OP_BUY_STOP
         if (helper->m_price_option == PO_WORST_PRICE) {
             find_tick = Factory::GetProcessor()->m_tick_history.FindMaxAsk(trade_record->symbol, helper->m_start_time, tick);
+            LOG("PO_WORST_PRICE & FindMaxAsk  trigered_price = %f", trigered_price);
             if (find_tick && SpreadDiff(user_info->grp.group, trade_record->symbol, &tick) && tick.ask > trigered_price) {
+                LOG("PO_WORST_PRICE & FindMaxAsk");
                 trigered_price = tick.ask;
             }
         } else if (helper->m_price_option == PO_BEST_PRICE) {
             find_tick = Factory::GetProcessor()->m_tick_history.FindMinAsk(trade_record->symbol, helper->m_start_time, tick);
+            LOG("PO_BEST_PRICE & FindMinAsk  trigered_price = %f", trigered_price);
             if (find_tick && SpreadDiff(user_info->grp.group, trade_record->symbol, &tick) && tick.ask < trigered_price) {
+                LOG("PO_BEST_PRICE & FindMinAsk");
                 trigered_price = tick.ask;
             }
         }
@@ -212,9 +222,6 @@ void Processor::Shutdown(void) {
     // release threads
 }
 
-//+------------------------------------------------------------------+
-//| Constructor                                                      |
-//+------------------------------------------------------------------+
 Processor::Processor()
     : m_reinitialize_flag(0),
       m_global_rule_delay_milisecond(1000),
@@ -231,64 +238,6 @@ Processor::Processor()
 
 Processor::~Processor() {}
 
-void Processor::Initialize() {
-    Factory::GetConfig()->GetInteger("Virtual Dealer ID", &m_virtual_dealer_login, "31415");
-    m_manager.login = m_virtual_dealer_login;
-
-    Factory::GetConfig()->GetInteger("Disable Plugin", &m_disable_virtual_dealer, "0");
-
-    //--- Default rule
-    Factory::GetConfig()->GetString("Symbol", m_global_rule_symbol, sizeof(m_global_rule_symbol) - 1, "*");
-    if (m_global_rule_symbol[0] == 0) {
-        COPY_STR(m_global_rule_symbol, "*");
-    }
-
-    Factory::GetConfig()->GetString("Group", m_global_rule_group, sizeof(m_global_rule_group) - 1, "*");
-    if (m_global_rule_group[0] == 0) {
-        COPY_STR(m_global_rule_group, "*");
-    }
-
-    char buffer[16] = {0};
-    Factory::GetConfig()->GetString("Customer ID", buffer, sizeof(buffer) - 1, "*");
-    RemoveWhiteChar(buffer);
-    if (buffer[0] == 0 || buffer[0] == '*') {
-        m_global_rule_login = -1;
-    } else {
-        m_global_rule_login = CStrToInt(buffer);
-    }
-
-    Factory::GetConfig()->GetInteger("Min Volume", &m_global_rule_min_volume, "-1");
-
-    Factory::GetConfig()->GetInteger("Max Volume", &m_global_rule_max_volume, "-1");
-
-    Factory::GetConfig()->GetString("Oder Type", buffer, sizeof(buffer) - 1, "*");
-    m_global_rule_order_type = ToOrderType(buffer, OT_ALL);
-
-    Factory::GetConfig()->GetInteger("Delayed Miliseconds", &m_global_rule_delay_milisecond, "1000");
-
-    buffer[0] = 0;
-    Factory::GetConfig()->GetString("Price Option", buffer, sizeof(buffer) - 1, "wp");
-    m_global_rule_price_option = ToPriceOption(buffer);
-
-    //--- specific rules
-    m_rule_container.Clear();
-    char rule[128];
-    int i = 0;
-    sprintf_s(buffer, "Rule_%02d", i++);
-    while (Factory::GetConfig()->HasKey(buffer)) {
-        //--- Add a rule
-        Factory::GetConfig()->GetString(buffer, rule, sizeof(rule) - 1, "");
-        LOG("Add rule \"%s\": %s", buffer, rule);
-        m_rule_container.AddRule(rule, buffer);
-        RemoveWhiteChar(rule);
-        Factory::GetConfig()->Add(buffer, rule, false);
-        sprintf_s(buffer, "Rule_%02d", i++);
-    }
-    Factory::GetConfig()->Save();
-}
-//+------------------------------------------------------------------+
-//| Show statistics                                                  |
-//+------------------------------------------------------------------+
 void Processor::ShowStatus() {
     if (Factory::GetServerInterface() != NULL && m_requests_total > 0) {
         //--- this line is used by the Log Analyser in order to calculate the requests
@@ -318,7 +267,8 @@ UINT __stdcall Processor::Delay(LPVOID parameter) {
 
     double prices[2];
     Factory::GetProcessor()->GetPrice(request_helper, prices);
-    LOG("prices ----------- %f %f", prices[0], prices[1]);
+    LOG("DelayPendingTriger--> order id = %d with request price = [%f, %f], confirmed at prices = [ %f %f ].",
+        request_info->trade.order, request_info->prices[0], request_info->prices[1], prices[0], prices[1]);
     Factory::GetServerInterface()->RequestsFree(request_helper->m_request_info->id, Factory::GetProcessor()->m_manager.login);
     Factory::GetServerInterface()->RequestsConfirm(request_helper->m_request_info->id, &Factory::GetProcessor()->m_manager,
                                                    prices);
@@ -347,12 +297,14 @@ UINT __stdcall Processor::DelaySlTpTriger(LPVOID parameter) {
     }
 
     //--- Modify the price
-    TradeRecord* m_trade_record = helper->m_trade_record;
-    m_trade_record->close_price = Factory::GetProcessor()->GetPrice(helper, m_trade_record->close_price);
+    TradeRecord* trade_record = helper->m_trade_record;
+    trade_record->close_price = Factory::GetProcessor()->GetPrice(helper, trade_record->cmd, trade_record->close_price);
     Factory::GetServerInterface()->OrdersUpdate(helper->m_trade_record, helper->m_user_info, UPDATE_CLOSE);
+    LOG("DelaySlTpTriger--> order id = %d closed at = %f.", trade_record->order, trade_record->close_price);
 
 exit:
-    Factory::GetProcessor()->OrderProcessed(m_trade_record->order);
+    Factory::GetProcessor()->OrderProcessed(trade_record->order);
+    delete helper->m_trade_record;
     delete helper;
     _endthreadex(0);
     return 0;
@@ -374,13 +326,19 @@ UINT __stdcall Processor::DelayPendingTriger(LPVOID parameter) {
     }
 
     //--- Modify the price
-    TradeRecord* m_trade_record = helper->m_trade_record;
-    m_trade_record->open_price = Factory::GetProcessor()->GetPrice(helper, m_trade_record->open_price);
+    TradeRecord* trade_record = helper->m_trade_record;
+    LOG("m_trade_record.order = %d", trade_record->order);
+    LOG_INFO(helper->m_user_info);
+    // LOG("m_pending_trade_record.order = %d", helper->m_pending_trade_record->order);
+    LOG_INFO(trade_record);
+    trade_record->open_price =
+        Factory::GetProcessor()->GetPrice(helper, helper->m_pending_trade_record->cmd, trade_record->open_price);
     Factory::GetServerInterface()->OrdersUpdate(helper->m_trade_record, helper->m_user_info, UPDATE_ACTIVATE);
-
+    LOG("DelayPendingTriger--> order id = %d activated at = %f.", trade_record->order, trade_record->close_price);
 exit:
     //--- release order
-    Factory::GetProcessor()->OrderProcessed(m_trade_record->order);
+    Factory::GetProcessor()->OrderProcessed(trade_record->order);
+    delete helper->m_trade_record;
     delete helper;
     _endthreadex(0);
     return 0;
@@ -391,6 +349,7 @@ bool Processor::SpreadDiff(const char* group, char* symbol, TickAPI* tick) {
     if (Factory::GetServerInterface()->SymbolsGet(symbol, &con_symbol) != FALSE) {
         LOG("SpreadDiff----------TickAPI [%d %f %f]", tick->ctm, tick->bid, tick->ask);
         int diff = GetSpreadDiff(group);
+        LOG("SpreadDiff----------diff = %d", diff);
         tick->bid = NormalizeDouble(tick->bid - con_symbol.point * diff / 2, con_symbol.digits);
         tick->ask = NormalizeDouble(tick->ask + con_symbol.point * diff / 2, con_symbol.digits);
         LOG("SpreadDiff----------TickAPI [%d %f %f]", tick->ctm, tick->bid, tick->ask);
@@ -452,7 +411,7 @@ bool Processor::GetDelayOption(const char* symbol, const char* group, int login,
 
         price_option = m_global_rule_price_option;
         delay_milisecond = m_global_rule_delay_milisecond;
-        LOG("Apply global rule to symbol = %s, group = %s, login = %d, volume = %d, order_type = %d", symbol, group, login,
+        LOG("Apply global rule to symbol = %s, group = %s, login = %d, volume = %d, order_type = %s", symbol, group, login,
             volume, ORDERTYPE(order_type));
     }
 
@@ -467,6 +426,61 @@ int Processor::GetSpreadDiff(const char* group) {
     return con_group.secgroups[0].spread_diff;
 }
 
+void Processor::Initialize() {
+    Factory::GetConfig()->GetInteger("Virtual Dealer ID", &m_virtual_dealer_login, "31415");
+    m_manager.login = m_virtual_dealer_login;
+
+    Factory::GetConfig()->GetInteger("Disable Plugin", &m_disable_virtual_dealer, "0");
+
+    //--- Default rule
+    Factory::GetConfig()->GetString("Symbol", m_global_rule_symbol, sizeof(m_global_rule_symbol) - 1, "*");
+    if (m_global_rule_symbol[0] == 0) {
+        COPY_STR(m_global_rule_symbol, "*");
+    }
+
+    Factory::GetConfig()->GetString("Group", m_global_rule_group, sizeof(m_global_rule_group) - 1, "*");
+    if (m_global_rule_group[0] == 0) {
+        COPY_STR(m_global_rule_group, "*");
+    }
+
+    char buffer[16] = {0};
+    Factory::GetConfig()->GetString("Customer ID", buffer, sizeof(buffer) - 1, "*");
+    RemoveWhiteChar(buffer);
+    if (buffer[0] == 0 || buffer[0] == '*') {
+        m_global_rule_login = -1;
+    } else {
+        m_global_rule_login = CStrToInt(buffer);
+    }
+
+    Factory::GetConfig()->GetInteger("Min Volume", &m_global_rule_min_volume, "-1");
+
+    Factory::GetConfig()->GetInteger("Max Volume", &m_global_rule_max_volume, "-1");
+
+    Factory::GetConfig()->GetString("Oder Type", buffer, sizeof(buffer) - 1, "*");
+    m_global_rule_order_type = ToOrderType(buffer, OT_ALL);
+
+    Factory::GetConfig()->GetInteger("Delayed Miliseconds", &m_global_rule_delay_milisecond, "1000");
+
+    buffer[0] = 0;
+    Factory::GetConfig()->GetString("Price Option", buffer, sizeof(buffer) - 1, "wp");
+    m_global_rule_price_option = ToPriceOption(buffer);
+
+    //--- specific rules
+    m_rule_container.Clear();
+    char rule[128];
+    int i = 0;
+    sprintf_s(buffer, "Rule_%02d", i++);
+    while (Factory::GetConfig()->HasKey(buffer)) {
+        //--- Add a rule
+        Factory::GetConfig()->GetString(buffer, rule, sizeof(rule) - 1, "");
+        LOG("Add rule \"%s\": %s", buffer, rule);
+        m_rule_container.AddRule(rule, buffer);
+        RemoveWhiteChar(rule);
+        Factory::GetConfig()->Add(buffer, rule, false);
+        sprintf_s(buffer, "Rule_%02d", i++);
+    }
+    Factory::GetConfig()->Save();
+}
 void Processor::ProcessRequest(RequestInfo* request) {
     if (Factory::GetServerInterface() == NULL) {
         return;
@@ -474,15 +488,6 @@ void Processor::ProcessRequest(RequestInfo* request) {
 
     LOG_INFO(request);
     LOG_INFO(&request->trade);
-
-    Lock();
-    if (m_processing_order.IsOrderProcessing(request->trade.order)) {
-        Unlock();
-        LOG("ProcessRequest: Order [%d] is already pending.", request->trade.order);
-        return;
-    }
-    m_processing_order.AddOrder(request->trade.order);
-    Unlock();
 
     //--- reinitialize if configuration changed
     if (InterlockedExchange(&m_reinitialize_flag, 0) != 0) {
@@ -504,7 +509,7 @@ void Processor::ProcessRequest(RequestInfo* request) {
 
     RequestHelper* request_helper = new RequestHelper;
     request_helper->m_request_info = request;
-    request_helper->m_start_time = time(NULL) + TIME_ZONE_DIFF - 1;
+    request_helper->m_start_time = Factory::GetServerInterface()->TradeTime() - 1;
 
     //--- apply rules
 
@@ -558,6 +563,9 @@ bool Processor::ActivatePendingOrder(const UserInfo* user, const ConGroup* group
     m_processing_order.AddOrder(trade->order);
     Unlock();
 
+    LOG_INFO(pending);
+    LOG_INFO(trade);
+
     //--- reinitialize if configuration changed
     if (InterlockedExchange(&m_reinitialize_flag, 0) != 0) {
         Initialize();
@@ -573,9 +581,11 @@ bool Processor::ActivatePendingOrder(const UserInfo* user, const ConGroup* group
 
     TrigerDelayHelper* request_helper = new TrigerDelayHelper;
     request_helper->m_user_info = (UserInfo*)user;
-    request_helper->m_trade_record = trade;
+    TradeRecord* trade_record = new TradeRecord;
+    memcpy_s(trade_record, sizeof(TradeRecord), trade, sizeof(TradeRecord));
+    request_helper->m_trade_record = trade_record;
     request_helper->m_pending_trade_record = pending;
-    request_helper->m_start_time = time(NULL) + TIME_ZONE_DIFF - 1;
+    request_helper->m_start_time = Factory::GetServerInterface()->TradeTime() - 1;
 
     if (!GetDelayOption(trade->symbol, group->group, user->login, trade->volume, order_type, request_helper->m_price_option,
                         request_helper->m_delay_milisecond)) {
@@ -587,6 +597,7 @@ bool Processor::ActivatePendingOrder(const UserInfo* user, const ConGroup* group
         goto without_delay;
     }
 
+    LOG("Begin a new thread to delay the pending order.");
     HANDLE hThread = (HANDLE)_beginthreadex(NULL, 0, Processor::DelayPendingTriger, (LPVOID)request_helper, 0, NULL);
     Lock();
     m_processing_order.ModifyOrder(trade->order, hThread);
@@ -597,6 +608,7 @@ bool Processor::ActivatePendingOrder(const UserInfo* user, const ConGroup* group
 
 without_delay:
     LOG("No rules to apply the order = %d ", trade->order);
+    delete request_helper->m_trade_record;
     delete request_helper;
     return true;
 }
@@ -640,8 +652,10 @@ bool Processor::AllowSLTP(const UserInfo* user, const ConGroup* group, const Con
 
     TrigerDelayHelper* request_helper = new TrigerDelayHelper;
     request_helper->m_user_info = (UserInfo*)user;
-    request_helper->m_trade_record = trade;
-    request_helper->m_start_time = time(NULL) + TIME_ZONE_DIFF - 1;
+    TradeRecord* trade_record = new TradeRecord;
+    memcpy_s(trade_record, sizeof(TradeRecord), trade, sizeof(TradeRecord));
+    request_helper->m_trade_record = trade_record;
+    request_helper->m_start_time = Factory::GetServerInterface()->TradeTime() - 1;
 
     if (!GetDelayOption(trade->symbol, group->group, user->login, trade->volume, order_type, request_helper->m_price_option,
                         request_helper->m_delay_milisecond)) {
@@ -664,6 +678,7 @@ bool Processor::AllowSLTP(const UserInfo* user, const ConGroup* group, const Con
 
 without_delay:
     LOG("No rules to apply the order = %d ", trade->order);
+    delete request_helper->m_trade_record;
     delete request_helper;
     return true;
 }

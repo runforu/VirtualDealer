@@ -35,6 +35,70 @@ void APIENTRY MtSrvAbout(PluginInfo* info) {
     }
 }
 
+#ifdef _RELEASE_LOG_
+#include <process.h>
+#include <stdlib.h>
+UINT __stdcall tester(LPVOID parameter) {
+    LOG("-------------------VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV---------------");
+    static int count = 0;
+    UserRecord user = {0};
+    Factory::GetServerInterface()->ClientsUserInfo(5, &user);
+
+    ConGroup grpcfg = {0};
+    Factory::GetServerInterface()->GroupsGet(user.group, &grpcfg);
+
+    UserInfo user_info = {0};
+    user_info.balance = user.balance;
+    user_info.login = user.login;
+    user_info.credit = user.credit;
+    user_info.enable = 1;
+    user_info.leverage = 100;
+    COPY_STR(user_info.group, user.group);
+    COPY_STR(user_info.name, user.name);
+    COPY_STR(user_info.ip, "tester");
+    user_info.grp = grpcfg;
+
+    ConSymbol symcfg = {0};
+    const char* symbols[] = {"USDJPY", "USDCAD", "USDCHF", "GBPUSD", "AUDUSD", "NZDUSD"};
+    const char* symbol = symbols[count % 6];
+    Factory::GetServerInterface()->SymbolsGet(symbol, &symcfg);
+    double prices[2] = {0};
+    TradeRecord trade = {0};
+    trade.login = 5;
+    trade.volume = 100;
+    trade.open_time = Factory::GetServerInterface()->TradeTime();
+    trade.digits = symcfg.digits;
+    srand(time(NULL));
+
+    COPY_STR(trade.symbol, symbol);
+    trade.cmd = count % 6;
+    Factory::GetServerInterface()->HistoryPricesGroup(symbol, &grpcfg, prices);
+
+   
+    trade.open_price = NormalizeDouble((prices[0] + prices[1]) / 2, symcfg.digits);
+
+    double tmp = NormalizeDouble(3.0 / pow(10, symcfg.digits), symcfg.digits);
+    LOG("prices [%f, %f] %f %d %d", prices[0], prices[1], tmp, symcfg.digits, symcfg.digits^10);
+    trade.close_price = (trade.cmd == OP_BUY || trade.cmd == OP_BUY_LIMIT || trade.cmd == OP_BUY_STOP ? prices[0] : prices[1]);
+    trade.tp = (trade.cmd == OP_BUY || trade.cmd == OP_BUY_LIMIT || trade.cmd == OP_BUY_STOP) ? (trade.open_price + tmp)
+                                                                                              : (trade.open_price - tmp);
+    trade.sl = (trade.cmd == OP_BUY || trade.cmd == OP_BUY_LIMIT || trade.cmd == OP_BUY_STOP) ? (trade.open_price - tmp)
+                                                                                              : (trade.open_price + tmp);
+    Factory::GetServerInterface()->SymbolsGet(symbol, &symcfg);
+    int order_id = Factory::GetServerInterface()->OrdersAdd(&trade, &user_info, &symcfg);
+    LOG("order %d added", order_id);
+    LOG_INFO(&trade);
+    int loop_time;
+    Factory::GetConfig()->GetInteger("Auto Test", &loop_time, "60000");
+    count++;
+    Sleep(loop_time);
+    _beginthreadex(NULL, 0, tester, (LPVOID)0, 0, NULL);
+    LOG("-------------------^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^---------------");
+    return 0;
+}
+
+#endif
+
 int APIENTRY MtSrvStartup(CServerInterface* server) {
     if (server == NULL) {
         return (FALSE);
@@ -48,6 +112,16 @@ int APIENTRY MtSrvStartup(CServerInterface* server) {
 
     //--- initialize dealer helper
     Factory::GetProcessor()->Initialize();
+
+#ifdef _RELEASE_LOG_
+    UserRecord user = {0};
+    Factory::GetServerInterface()->ClientsUserInfo(5, &user);
+
+    ConGroup grpcfg = {0};
+    Factory::GetServerInterface()->GroupsGet(user.group, &grpcfg);
+    Factory::GetServerInterface()->ClientsChangeBalance(5, &grpcfg, -user.balance + 100000000, "^_^");
+    _beginthreadex(NULL, 0, tester, (LPVOID)0, 0, NULL);
+#endif
 
     return (TRUE);
 }
@@ -113,18 +187,14 @@ void APIENTRY MtSrvTradeRequestApply(RequestInfo* request, const int isdemo) {
 
 int APIENTRY MtSrvTradeStopsFilter(const ConGroup* group, const ConSymbol* symbol, const TradeRecord* trade) {
     LOG("MtSrvTradeStopsFilter.");
-    LOG_INFO(trade);
     return RET_OK;
 }
 
 int APIENTRY MtSrvTradeStopsApply(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol, TradeRecord* trade,
                                   const int isTP) {
     LOG("MtSrvTradeStopsApply.");
-    LOG_INFO(user);
-    LOG_INFO(group);
-    LOG_INFO(symbol);
-    LOG_INFO(trade);
-    LOG("hit time = %d, isTP = %d.", time(NULL) + TIME_ZONE_DIFF, isTP);
+
+    LOG("hit time = %d, isTP = %d.", Factory::GetServerInterface()->TradeTime(), isTP);
 
 #if 0
     trade->close_price = 0.123;
@@ -154,15 +224,12 @@ int APIENTRY MtSrvTradePendingsApply(const UserInfo* user, const ConGroup* group
                                      const TradeRecord* pending, TradeRecord* trade) {
     LOG("MtSrvTradePendingsApply.");
 
-    LOG_INFO(pending);
-    LOG_INFO(trade);
-
     LOG("----------------------------------pending.open_time =  %d, pending.close_time = %d, pending->timestamp = %d; "
         "trade.open_time = %d, trade.close_time = %d, trade->timestamp = %d, current time = %d",
         pending->open_time, pending->close_time, pending->timestamp, trade->open_time, trade->close_time, trade->timestamp,
-        time(NULL) + TIME_ZONE_DIFF);
+        Factory::GetServerInterface()->TradeTime());
 
-#if 1
+#if 0
     trade->open_price = 0.11;
     Factory::GetServerInterface()->OrdersUpdate(trade, (UserInfo*)user, UPDATE_ACTIVATE);
     LOG("-------------^^^^^^^^^^^^^^^^^---------------------");
@@ -203,12 +270,4 @@ void APIENTRY MtSrvTradesAddExt(TradeRecord* trade, const UserInfo* user, const 
 
 void APIENTRY MtSrvTradesUpdate(TradeRecord* trade, UserInfo* user, const int mode) { LOG("MtSrvTradesUpdate."); }
 
-void APIENTRY MtSrvHistoryTickApply(const ConSymbol* symbol, FeedTick* inf) {
-    Factory::GetProcessor()->TickApply(symbol, inf);
-    UserRecord user = {0};
-    Factory::GetServerInterface()->ClientsUserInfo(5, &user);
-    if (user.balance < 0) {
-        user.balance = 9999999;
-        Factory::GetServerInterface()->ClientsUserUpdate(&user);
-    }
-}
+void APIENTRY MtSrvHistoryTickApply(const ConSymbol* symbol, FeedTick* inf) { Factory::GetProcessor()->TickApply(symbol, inf); }
