@@ -5,7 +5,6 @@
 #include "ProcessingOrder.h"
 #include "RuleContainer.h"
 #include "TickHistory.h"
-#include "TrigerPriceManager.h"
 
 struct RequestHelper {
     RequestInfo* m_request_info;

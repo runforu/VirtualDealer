@@ -181,7 +181,6 @@
     <ClCompile Include="FileUtil.cpp" />
     <ClCompile Include="Loger.cpp" />
     <ClCompile Include="TickHistory.cpp" />
-    <ClCompile Include="TrigerPriceManager.cpp" />
     <ClCompile Include="VirtualDealer.cpp" />
     <ClCompile Include="Factory.cpp" />
     <ClCompile Include="Processor.cpp" />
@@ -197,7 +196,6 @@
     <ClInclude Include="Processor.h" />
     <ClInclude Include="Synchronizer.h" />
     <ClInclude Include="TickHistory.h" />
-    <ClInclude Include="TrigerPriceManager.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="VirtualDealer.def" />

@@ -32,6 +32,7 @@ void Processor::GetPrice(RequestHelper* helper, double* prices) {
                     find_tick = Factory::GetProcessor()->m_tick_history.FindMaxAsk(trade.symbol, helper->m_start_time, tick);
                     if (find_tick && SpreadDiff(request_info->group, request_info->trade.symbol, &tick) &&
                         tick.ask > prices[0]) {
+                        LOG("PO_WORST_PRICE TT_ORDER_MK_OPEN & OP_BUY & FindMaxAsk");
                         prices[0] = tick.bid;
                         prices[1] = tick.ask;
                     }
@@ -39,6 +40,7 @@ void Processor::GetPrice(RequestHelper* helper, double* prices) {
                     find_tick = Factory::GetProcessor()->m_tick_history.FindMinBid(trade.symbol, helper->m_start_time, tick);
                     if (find_tick && SpreadDiff(request_info->group, request_info->trade.symbol, &tick) &&
                         tick.bid < prices[1]) {
+                        LOG("PO_WORST_PRICE TT_ORDER_MK_OPEN & OP_SELL & FindMinBid");
                         prices[0] = tick.bid;
                         prices[1] = tick.ask;
                     }
@@ -48,6 +50,7 @@ void Processor::GetPrice(RequestHelper* helper, double* prices) {
                     find_tick = Factory::GetProcessor()->m_tick_history.FindMinBid(trade.symbol, helper->m_start_time, tick);
                     if (find_tick && SpreadDiff(request_info->group, request_info->trade.symbol, &tick) &&
                         tick.bid < prices[1]) {
+                        LOG("PO_WORST_PRICE TT_ORDER_MK_CLOSE & OP_BUY & FindMinBid");
                         prices[0] = tick.bid;
                         prices[1] = tick.ask;
                     }
@@ -55,6 +58,7 @@ void Processor::GetPrice(RequestHelper* helper, double* prices) {
                     find_tick = Factory::GetProcessor()->m_tick_history.FindMaxAsk(trade.symbol, helper->m_start_time, tick);
                     if (find_tick && SpreadDiff(request_info->group, request_info->trade.symbol, &tick) &&
                         tick.ask > prices[0]) {
+                        LOG("PO_WORST_PRICE TT_ORDER_MK_CLOSE & OP_SELL & FindMaxAsk");
                         prices[0] = tick.bid;
                         prices[1] = tick.ask;
                     }
@@ -67,6 +71,7 @@ void Processor::GetPrice(RequestHelper* helper, double* prices) {
                     find_tick = Factory::GetProcessor()->m_tick_history.FindMinAsk(trade.symbol, helper->m_start_time, tick);
                     if (find_tick && SpreadDiff(request_info->group, request_info->trade.symbol, &tick) &&
                         tick.ask < prices[0]) {
+                        LOG("PO_BEST_PRICE TT_ORDER_MK_OPEN & OP_BUY & FindMinAsk");
                         prices[0] = tick.bid;
                         prices[1] = tick.ask;
                     }
@@ -74,6 +79,7 @@ void Processor::GetPrice(RequestHelper* helper, double* prices) {
                     find_tick = Factory::GetProcessor()->m_tick_history.FindMaxBid(trade.symbol, helper->m_start_time, tick);
                     if (find_tick && SpreadDiff(request_info->group, request_info->trade.symbol, &tick) &&
                         tick.bid > prices[1]) {
+                        LOG("PO_BEST_PRICE TT_ORDER_MK_OPEN & OP_SELL & FindMaxBid");
                         prices[0] = tick.bid;
                         prices[1] = tick.ask;
                     }
@@ -83,6 +89,7 @@ void Processor::GetPrice(RequestHelper* helper, double* prices) {
                     find_tick = Factory::GetProcessor()->m_tick_history.FindMaxBid(trade.symbol, helper->m_start_time, tick);
                     if (find_tick && SpreadDiff(request_info->group, request_info->trade.symbol, &tick) &&
                         tick.bid > prices[1]) {
+                        LOG("PO_BEST_PRICE TT_ORDER_MK_CLOSE & OP_BUY & FindMaxBid");
                         prices[0] = tick.bid;
                         prices[1] = tick.ask;
                     }
@@ -90,6 +97,7 @@ void Processor::GetPrice(RequestHelper* helper, double* prices) {
                     find_tick = Factory::GetProcessor()->m_tick_history.FindMinAsk(trade.symbol, helper->m_start_time, tick);
                     if (find_tick && SpreadDiff(request_info->group, request_info->trade.symbol, &tick) &&
                         tick.ask < prices[0]) {
+                        LOG("PO_BEST_PRICE TT_ORDER_MK_CLOSE & OP_SELL & FindMinAsk");
                         prices[0] = tick.bid;
                         prices[1] = tick.ask;
                     }
@@ -99,6 +107,7 @@ void Processor::GetPrice(RequestHelper* helper, double* prices) {
         case PO_FIRST_PRICE:
             find_tick = Factory::GetProcessor()->m_tick_history.GetFirstPrice(trade.symbol, helper->m_start_time, tick);
             if (find_tick && SpreadDiff(request_info->group, request_info->trade.symbol, &tick)) {
+                LOG("PO_FIRST_PRICE");
                 prices[0] = tick.bid;
                 prices[1] = tick.ask;
             }
@@ -267,14 +276,14 @@ UINT __stdcall Processor::Delay(LPVOID parameter) {
 
     double prices[2];
     Factory::GetProcessor()->GetPrice(request_helper, prices);
-    LOG("DelayPendingTriger--> order id = %d with request price = [%f, %f], confirmed at prices = [ %f %f ].",
-        request_info->trade.order, request_info->prices[0], request_info->prices[1], prices[0], prices[1]);
+    LOG("Delay--> order id = %d with request price = [%f, %f], confirmed at prices = [ %f %f ].", request_info->trade.order,
+        request_info->prices[0], request_info->prices[1], prices[0], prices[1]);
     Factory::GetServerInterface()->RequestsFree(request_helper->m_request_info->id, Factory::GetProcessor()->m_manager.login);
     Factory::GetServerInterface()->RequestsConfirm(request_helper->m_request_info->id, &Factory::GetProcessor()->m_manager,
                                                    prices);
 
 exit:
-    Factory::GetProcessor()->OrderProcessed(request_helper->m_request_info->trade.order);
+    Factory::GetProcessor()->OrderProcessed(request_info->trade.order);
     delete request_helper;
     _endthreadex(0);
     return 0;
@@ -334,7 +343,7 @@ UINT __stdcall Processor::DelayPendingTriger(LPVOID parameter) {
     trade_record->open_price =
         Factory::GetProcessor()->GetPrice(helper, helper->m_pending_trade_record->cmd, trade_record->open_price);
     Factory::GetServerInterface()->OrdersUpdate(helper->m_trade_record, helper->m_user_info, UPDATE_ACTIVATE);
-    LOG("DelayPendingTriger--> order id = %d activated at = %f.", trade_record->order, trade_record->close_price);
+    LOG("DelayPendingTriger--> order id = %d activated at = %f.", trade_record->order, trade_record->open_price);
 exit:
     //--- release order
     Factory::GetProcessor()->OrderProcessed(trade_record->order);
@@ -350,9 +359,11 @@ bool Processor::SpreadDiff(const char* group, char* symbol, TickAPI* tick) {
         LOG("SpreadDiff----------TickAPI [%d %f %f]", tick->ctm, tick->bid, tick->ask);
         int diff = GetSpreadDiff(group);
         LOG("SpreadDiff----------diff = %d", diff);
-        tick->bid = NormalizeDouble(tick->bid - con_symbol.point * diff / 2, con_symbol.digits);
-        tick->ask = NormalizeDouble(tick->ask + con_symbol.point * diff / 2, con_symbol.digits);
-        LOG("SpreadDiff----------TickAPI [%d %f %f]", tick->ctm, tick->bid, tick->ask);
+        if (diff != 0) {
+            tick->bid = NormalizeDouble(tick->bid - con_symbol.point * diff / 2, con_symbol.digits);
+            tick->ask = NormalizeDouble(tick->ask + con_symbol.point * diff / 2, con_symbol.digits);
+            LOG("SpreadDiff----------TickAPI [%d %f %f]", tick->ctm, tick->bid, tick->ask);
+        }
         return true;
     }
     return false;
@@ -481,6 +492,7 @@ void Processor::Initialize() {
     }
     Factory::GetConfig()->Save();
 }
+
 void Processor::ProcessRequest(RequestInfo* request) {
     if (Factory::GetServerInterface() == NULL) {
         return;
@@ -488,6 +500,16 @@ void Processor::ProcessRequest(RequestInfo* request) {
 
     LOG_INFO(request);
     LOG_INFO(&request->trade);
+
+    Lock();
+    if (m_processing_order.IsOrderProcessing(request->trade.order)) {
+        Unlock();
+        LOG("ProcessRequest: Order [%d] is in pending queue.", request->trade.order);
+        //--- the order is delayed already
+        return ;
+    }
+    m_processing_order.AddOrder(request->trade.order);
+    Unlock();
 
     //--- reinitialize if configuration changed
     if (InterlockedExchange(&m_reinitialize_flag, 0) != 0) {
@@ -534,9 +556,8 @@ void Processor::ProcessRequest(RequestInfo* request) {
     Factory::GetServerInterface()->RequestsLock(request->id, m_manager.login);
     HANDLE hThread = (HANDLE)_beginthreadex(NULL, 0, Processor::Delay, (LPVOID)request_helper, 0, NULL);
     Lock();
-    m_processing_order.ModifyOrder(request->trade.order, hThread);
+    m_processing_order.ModifyOrder(trade->order, hThread);
     Unlock();
-
     m_requests_total++;
 
     return;
@@ -618,17 +639,17 @@ bool Processor::AllowSLTP(const UserInfo* user, const ConGroup* group, const Con
     if (Factory::GetServerInterface() == NULL) {
         return true;
     }
-
-    LOG_INFO(trade);
-
+    
     Lock();
     if (m_processing_order.IsOrderProcessing(trade->order)) {
         Unlock();
-        LOG("AllowSLTP: Order [%d] is already pending.", trade->order);
+        LOG("AllowSLTP: Order [%d] is already in processing queue.", trade->order);
         return false;
     }
     m_processing_order.AddOrder(trade->order);
     Unlock();
+
+    LOG_INFO(trade);
 
     //--- reinitialize if configuration changed
     if (InterlockedExchange(&m_reinitialize_flag, 0) != 0) {
