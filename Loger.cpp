@@ -30,7 +30,7 @@ const char* Loger::OrderTypeStr(int order_type) {
     static char* price_option_str[] = {"OT_NONE",
                                        "OT_OPEN",
                                        "OT_CLOSE",
-                                       "OT_CLOSE|OT_OPEN"
+                                       "OT_CLOSE|OT_OPEN",
                                        "OT_TP",
                                        "OT_TP|OT_OPEN",
                                        "OT_TP|OT_CLOSE",
@@ -46,7 +46,7 @@ const char* Loger::OrderTypeStr(int order_type) {
                                        "OT_PENDING",
                                        "OT_PENDING|OT_OPEN",
                                        "OT_PENDING|OT_CLOSE",
-                                       "OT_PENDING|OT_CLOSE|OT_OPEN"
+                                       "OT_PENDING|OT_CLOSE|OT_OPEN",
                                        "OT_PENDING|OT_TP",
                                        "OT_PENDING|OT_TP|OT_OPEN",
                                        "OT_PENDING|OT_TP|OT_CLOSE",

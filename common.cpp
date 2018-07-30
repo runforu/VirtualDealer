@@ -189,16 +189,13 @@ int ToOrderType(const char* type, int default_value) {
     if (type == NULL || strlen(type) == 0) {
         return default_value;
     }
-
     if (strcmp(type, "*") == 0) {
         return OT_ALL;
     }
-
     int mask = 0;
     char tmp[32], *start, *cp;
     strncpy_s(tmp, type, sizeof(tmp));
     start = tmp;
-
     do {
         cp = strstr(start, "|");
         if (cp != NULL) {
@@ -220,7 +217,6 @@ int ToOrderType(const char* type, int default_value) {
         }
         start = cp;
     } while (start != NULL && strlen(start) != 0);
-
     return mask;
 }
 
