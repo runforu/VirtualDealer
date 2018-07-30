@@ -33,8 +33,6 @@ private:
     int m_virtual_dealer_login;
     int m_disable_virtual_dealer;
 
-    int m_auto_test;
-
     //--- default rule to filter transanction
     char m_global_rule_symbol[12];
     char m_global_rule_group[16];
