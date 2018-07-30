@@ -53,3 +53,22 @@ bool ProcessingOrder::IsOrderProcessing(int order_id) {
     LOG("|--> Order %d is in processing: %s ", order_id, index < MAX_PROCESSING_ORDER ? "yes" : "no");
     return index < MAX_PROCESSING_ORDER;
 }
+
+bool ProcessingOrder::IsEmpty() {
+    for (int i = 0; i < MAX_PROCESSING_ORDER; i++) {
+        if (m_processing_order[i].m_order_id != 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void ProcessingOrder::EmptyOrders() {
+    for (int i = 0; i < MAX_PROCESSING_ORDER; i++) {
+        if (m_processing_order[i].m_order_id != 0) {
+            TerminateThread(m_processing_order[i].m_handler, 0);
+            CloseHandle(m_processing_order[i].m_handler);
+            m_processing_order[i].m_order_id = 0;
+        }
+    }
+}

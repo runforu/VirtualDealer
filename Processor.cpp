@@ -229,6 +229,11 @@ double Processor::GetPrice(TrigerDelayHelper* helper, int cmd, double trigered_p
 
 void Processor::Shutdown(void) {
     // release threads
+    InterlockedExchange(&m_is_shuting_down, 1L);
+    Lock();
+    m_processing_order.EmptyOrders();
+    Unlock();
+    LOG("-------Shutdown--------Shutdown-------Shutdown--------");
 }
 
 Processor::Processor()
@@ -237,7 +242,8 @@ Processor::Processor()
       m_virtual_dealer_login(31415),
       m_disable_virtual_dealer(0),
       m_requests_total(0),
-      m_requests_processed(0) {
+      m_requests_processed(0),
+      m_is_shuting_down(0) {
     ZeroMemory(&m_manager, sizeof(m_manager));
     m_manager.login = 31415;
     COPY_STR(m_manager.name, "Virtual Dealer");
@@ -256,9 +262,9 @@ void Processor::ShowStatus() {
     }
 }
 
-UINT __stdcall Processor::Delay(LPVOID parameter) {
+UINT Processor::Delay(LPVOID parameter) {
     RequestHelper* request_helper = (RequestHelper*)parameter;
-    if (Factory::GetServerInterface() == NULL || Factory::GetProcessor() == NULL) {
+    if (Factory::GetServerInterface() == NULL) {
         goto exit;
     }
 
@@ -267,7 +273,7 @@ UINT __stdcall Processor::Delay(LPVOID parameter) {
 
     Sleep(request_helper->m_delay_milisecond);
 
-    if (Factory::GetServerInterface() == NULL) {
+    if (Factory::GetServerInterface() == NULL || m_is_shuting_down) {
         goto exit;
     }
 
@@ -275,24 +281,26 @@ UINT __stdcall Processor::Delay(LPVOID parameter) {
     RequestInfo* request_info = request_helper->m_request_info;
 
     double prices[2];
-    Factory::GetProcessor()->GetPrice(request_helper, prices);
+    GetPrice(request_helper, prices);
     LOG("Delay--> order id = %d with request price = [%f, %f], confirmed at prices = [ %f %f ].", request_info->trade.order,
         request_info->prices[0], request_info->prices[1], prices[0], prices[1]);
-    Factory::GetServerInterface()->RequestsFree(request_helper->m_request_info->id, Factory::GetProcessor()->m_manager.login);
-    Factory::GetServerInterface()->RequestsConfirm(request_helper->m_request_info->id, &Factory::GetProcessor()->m_manager,
-                                                   prices);
+    Factory::GetServerInterface()->RequestsFree(request_helper->m_request_info->id, m_manager.login);
+    Factory::GetServerInterface()->RequestsConfirm(request_helper->m_request_info->id, &m_manager, prices);
 
 exit:
-    Factory::GetProcessor()->OrderProcessed(request_info->trade.order);
+    InterlockedIncrement(&m_requests_processed);
+    OrderProcessed(request_info->trade.order);
     delete request_helper;
-    _endthreadex(0);
+    _endthread();
     return 0;
 }
 
-UINT __stdcall Processor::DelaySlTpTriger(LPVOID parameter) {
+inline void Processor::DelayWrapper(LPVOID parameter) { Factory::GetProcessor()->Delay(parameter); }
+
+UINT Processor::DelaySlTpTriger(LPVOID parameter) {
     TrigerDelayHelper* helper = (TrigerDelayHelper*)parameter;
 
-    if (Factory::GetServerInterface() == NULL || Factory::GetProcessor() == NULL) {
+    if (Factory::GetServerInterface() == NULL) {
         goto exit;
     }
 
@@ -301,28 +309,31 @@ UINT __stdcall Processor::DelaySlTpTriger(LPVOID parameter) {
     Sleep(helper->m_delay_milisecond);
     LOG("DelaySlTpTriger order id =%d wake up, comment = %s", helper->m_trade_record->order, helper->m_trade_record->comment);
 
-    if (Factory::GetServerInterface() == NULL) {
+    if (Factory::GetServerInterface() == NULL || m_is_shuting_down) {
         goto exit;
     }
 
     //--- Modify the price
     TradeRecord* trade_record = helper->m_trade_record;
-    trade_record->close_price = Factory::GetProcessor()->GetPrice(helper, trade_record->cmd, trade_record->close_price);
+    trade_record->close_price = GetPrice(helper, trade_record->cmd, trade_record->close_price);
     Factory::GetServerInterface()->OrdersUpdate(helper->m_trade_record, helper->m_user_info, UPDATE_CLOSE);
     LOG("DelaySlTpTriger--> order id = %d closed at = %f.", trade_record->order, trade_record->close_price);
 
 exit:
-    Factory::GetProcessor()->OrderProcessed(trade_record->order);
+    InterlockedIncrement(&m_requests_processed);
+    OrderProcessed(trade_record->order);
     delete helper->m_trade_record;
     delete helper;
-    _endthreadex(0);
+    _endthread();
     return 0;
 }
 
-UINT __stdcall Processor::DelayPendingTriger(LPVOID parameter) {
+inline void Processor::DelaySlTpTrigerWrapper(LPVOID parameter) { Factory::GetProcessor()->DelaySlTpTriger(parameter); }
+
+UINT Processor::DelayPendingTriger(LPVOID parameter) {
     TrigerDelayHelper* helper = (TrigerDelayHelper*)parameter;
 
-    if (Factory::GetServerInterface() == NULL || Factory::GetProcessor() == NULL) {
+    if (Factory::GetServerInterface() == NULL) {
         goto exit;
     }
 
@@ -330,7 +341,7 @@ UINT __stdcall Processor::DelayPendingTriger(LPVOID parameter) {
     Sleep(helper->m_delay_milisecond);
     LOG("DelayPendingTriger wake up");
 
-    if (Factory::GetServerInterface() == NULL) {
+    if (Factory::GetServerInterface() == NULL || m_is_shuting_down) {
         goto exit;
     }
 
@@ -340,18 +351,21 @@ UINT __stdcall Processor::DelayPendingTriger(LPVOID parameter) {
     LOG_INFO(helper->m_user_info);
     // LOG("m_pending_trade_record.order = %d", helper->m_pending_trade_record->order);
     LOG_INFO(trade_record);
-    trade_record->open_price =
-        Factory::GetProcessor()->GetPrice(helper, helper->m_pending_trade_record->cmd, trade_record->open_price);
+    trade_record->open_price = GetPrice(helper, helper->m_pending_trade_record->cmd, trade_record->open_price);
     Factory::GetServerInterface()->OrdersUpdate(helper->m_trade_record, helper->m_user_info, UPDATE_ACTIVATE);
     LOG("DelayPendingTriger--> order id = %d activated at = %f.", trade_record->order, trade_record->open_price);
+
 exit:
+    InterlockedIncrement(&m_requests_processed);
     //--- release order
-    Factory::GetProcessor()->OrderProcessed(trade_record->order);
+    OrderProcessed(trade_record->order);
     delete helper->m_trade_record;
     delete helper;
-    _endthreadex(0);
+    _endthread();
     return 0;
 }
+
+inline void Processor::DelayPendingTrigerWrapper(LPVOID parameter) { Factory::GetProcessor()->DelayPendingTriger(parameter); }
 
 bool Processor::SpreadDiff(const char* group, char* symbol, TickAPI* tick) {
     ConSymbol con_symbol;
@@ -494,6 +508,10 @@ void Processor::Initialize() {
 }
 
 void Processor::ProcessRequest(RequestInfo* request) {
+    if (m_is_shuting_down) {
+        return;
+    }
+
     if (Factory::GetServerInterface() == NULL) {
         return;
     }
@@ -506,7 +524,7 @@ void Processor::ProcessRequest(RequestInfo* request) {
         Unlock();
         LOG("ProcessRequest: Order [%d] is in pending queue.", request->trade.order);
         //--- the order is delayed already
-        return ;
+        return;
     }
     m_processing_order.AddOrder(request->trade.order);
     Unlock();
@@ -554,7 +572,7 @@ void Processor::ProcessRequest(RequestInfo* request) {
     }
 
     Factory::GetServerInterface()->RequestsLock(request->id, m_manager.login);
-    HANDLE hThread = (HANDLE)_beginthreadex(NULL, 0, Processor::Delay, (LPVOID)request_helper, 0, NULL);
+    HANDLE hThread = (HANDLE)_beginthread(DelayWrapper, 0, (LPVOID)request_helper);
     Lock();
     m_processing_order.ModifyOrder(trade->order, hThread);
     Unlock();
@@ -570,6 +588,10 @@ without_delay:
 
 bool Processor::ActivatePendingOrder(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol,
                                      const TradeRecord* pending, TradeRecord* trade) {
+    if (m_is_shuting_down) {
+        return true;
+    }
+
     if (Factory::GetServerInterface() == NULL) {
         return true;
     }
@@ -619,7 +641,7 @@ bool Processor::ActivatePendingOrder(const UserInfo* user, const ConGroup* group
     }
 
     LOG("Begin a new thread to delay the pending order.");
-    HANDLE hThread = (HANDLE)_beginthreadex(NULL, 0, Processor::DelayPendingTriger, (LPVOID)request_helper, 0, NULL);
+    HANDLE hThread = (HANDLE)_beginthread(DelayPendingTrigerWrapper, 0, (LPVOID)request_helper);
     Lock();
     m_processing_order.ModifyOrder(trade->order, hThread);
     Unlock();
@@ -636,10 +658,14 @@ without_delay:
 
 bool Processor::AllowSLTP(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol, TradeRecord* trade,
                           const int isTP) {
+    if (m_is_shuting_down) {
+        return true;
+    }
+
     if (Factory::GetServerInterface() == NULL) {
         return true;
     }
-    
+
     Lock();
     if (m_processing_order.IsOrderProcessing(trade->order)) {
         Unlock();
@@ -688,7 +714,7 @@ bool Processor::AllowSLTP(const UserInfo* user, const ConGroup* group, const Con
         goto without_delay;
     }
 
-    HANDLE hThread = (HANDLE)_beginthreadex(NULL, 0, Processor::DelaySlTpTriger, (LPVOID)request_helper, 0, NULL);
+    HANDLE hThread = (HANDLE)_beginthread(DelaySlTpTrigerWrapper, 0, (LPVOID)request_helper);
     Lock();
     m_processing_order.ModifyOrder(trade->order, hThread);
     Unlock();

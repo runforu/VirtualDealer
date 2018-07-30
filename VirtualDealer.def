@@ -3,6 +3,7 @@ LIBRARY VirtualDealer
 EXPORTS
     MtSrvAbout
     MtSrvStartup
+    MtSrvCleanup
     MtSrvPluginCfgSet
     MtSrvPluginCfgNext
     MtSrvPluginCfgTotal

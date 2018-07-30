@@ -55,12 +55,13 @@ private:
     //--- statistics
     LONG m_reinitialize_flag;
     int m_requests_total;
-    int m_requests_processed;
+    unsigned int m_requests_processed;
 
     Synchronizer m_sync;
 
     //--- any access to m_processing_order should be locked
     ProcessingOrder m_processing_order;
+    LONG m_is_shuting_down;
 
 public:
     inline void Reinitialize() { InterlockedExchange(&m_reinitialize_flag, 1); }
@@ -84,13 +85,22 @@ private:
     //{OP_BUY,OP_SELL,OP_BUY_LIMIT,OP_SELL_LIMIT,OP_BUY_STOP,OP_SELL_STOP} price is the trigered price.
     double GetPrice(TrigerDelayHelper* helper, int cmd, double trigered_price);
     void GetPrice(RequestHelper* helper, double* prices);
+
     void OrderProcessed(int order_id);
+
     static int GetSpreadDiff(RequestInfo* request);
     static int GetSpreadDiff(const char* group);
-    static UINT __stdcall Delay(LPVOID parameter);
-    static UINT __stdcall DelaySlTpTriger(LPVOID parameter);
-    static UINT __stdcall DelayPendingTriger(LPVOID parameter);
     static bool SpreadDiff(const char* group, char* symbol, TickAPI* tick);
+
+    UINT Delay(LPVOID parameter);
+    static void __cdecl  DelayWrapper(LPVOID parameter);
+
+    UINT DelaySlTpTriger(LPVOID parameter);
+    static void __cdecl  DelaySlTpTrigerWrapper(LPVOID parameter);
+
+    UINT DelayPendingTriger(LPVOID parameter);
+    static void __cdecl  DelayPendingTrigerWrapper(LPVOID parameter);
+
     bool GetDelayOption(const char* symbol, const char* group, int client_login, int volume, int order_type,
                         PriceOption& price_option, int& delay_milisecond);
 };
