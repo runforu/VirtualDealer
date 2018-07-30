@@ -5,10 +5,12 @@
 #include "ProcessingOrder.h"
 #include "RuleContainer.h"
 #include "TickHistory.h"
+#include "ProcessingHandle.h"
 
 struct RequestHelper {
     RequestInfo* m_request_info;
     PriceOption m_price_option;
+    HANDLE m_handle;
     time_t m_start_time;
     int m_delay_milisecond;
 };
@@ -59,6 +61,7 @@ private:
 
     //--- any access to m_processing_order should be locked
     ProcessingOrder m_processing_order;
+    ProcessingHandle m_processing_handle;
     LONG m_is_shuting_down;
 
 public:
@@ -85,6 +88,7 @@ private:
     void GetPrice(RequestHelper* helper, double* prices);
 
     void OrderProcessed(int order_id);
+    void HandleProcessed(HANDLE handle);
 
     static int GetSpreadDiff(RequestInfo* request);
     static int GetSpreadDiff(const char* group);

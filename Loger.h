@@ -33,8 +33,7 @@ public:
 #define ORDERTYPE(order_type) Loger::OrderTypeStr(order_type)
 
 #define LOG(format, ...) Loger::out(_CODE_, _IP_, format, ##__VA_ARGS__);
-#define LOG_INFO(info) 
-//Loger::out(_CODE_, _IP_, info);
+#define LOG_INFO(info)  Loger::out(_CODE_, _IP_, info);
 
 #else _RELEASE_LOG_
 

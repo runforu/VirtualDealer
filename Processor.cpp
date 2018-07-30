@@ -141,6 +141,12 @@ void Processor::OrderProcessed(int order_id) {
     Unlock();
 }
 
+void Processor::HandleProcessed(HANDLE handle) {
+    Lock();
+    m_processing_handle.RemoveHandle(handle);
+    Unlock();
+}
+
 //--- only handle trigered order
 double Processor::GetPrice(TrigerDelayHelper* helper, int cmd, double trigered_price) {
     TradeRecord* trade_record = helper->m_trade_record;
@@ -232,6 +238,7 @@ void Processor::Shutdown(void) {
     InterlockedExchange(&m_is_shuting_down, 1L);
     Lock();
     m_processing_order.EmptyOrders();
+    m_processing_handle.CloseAll();
     Unlock();
     LOG("-------Shutdown--------Shutdown-------Shutdown--------");
 }
@@ -289,7 +296,7 @@ UINT Processor::Delay(LPVOID parameter) {
 
 exit:
     InterlockedIncrement(&m_requests_processed);
-    OrderProcessed(request_info->trade.order);
+    HandleProcessed(request_helper->m_handle);
     delete request_helper;
     _endthread();
     return 0;
@@ -519,16 +526,6 @@ void Processor::ProcessRequest(RequestInfo* request) {
     LOG_INFO(request);
     LOG_INFO(&request->trade);
 
-    Lock();
-    if (m_processing_order.IsOrderProcessing(request->trade.order)) {
-        Unlock();
-        LOG("ProcessRequest: Order [%d] is in pending queue.", request->trade.order);
-        //--- the order is delayed already
-        return;
-    }
-    m_processing_order.AddOrder(request->trade.order);
-    Unlock();
-
     //--- reinitialize if configuration changed
     if (InterlockedExchange(&m_reinitialize_flag, 0) != 0) {
         Initialize();
@@ -574,7 +571,8 @@ void Processor::ProcessRequest(RequestInfo* request) {
     Factory::GetServerInterface()->RequestsLock(request->id, m_manager.login);
     HANDLE hThread = (HANDLE)_beginthread(DelayWrapper, 0, (LPVOID)request_helper);
     Lock();
-    m_processing_order.ModifyOrder(trade->order, hThread);
+    request_helper->m_handle = hThread;
+    m_processing_handle.AddHandle(hThread);
     Unlock();
     m_requests_total++;
 
