@@ -75,13 +75,13 @@ int APIENTRY MtSrvPluginCfgTotal() {
     return Factory::GetConfig()->Total();
 }
 
-int APIENTRY MtSrvTradeRequestFilter(RequestInfo* request, const int isdemo) {
-    LOG("MtSrvTradeRequestFilter.");
+int APIENTRY MtSrvTradeTransaction(TradeTransInfo* trans, const UserInfo* user, int* request_id) {
+    LOG("MtSrvTradeTransaction.");
     return RET_OK;
 }
 
-int APIENTRY MtSrvTradeTransaction(TradeTransInfo* trans, const UserInfo* user, int* request_id) {
-    LOG("MtSrvTradeTransaction.");
+int APIENTRY MtSrvTradeRequestFilter(RequestInfo* request, const int isdemo) {
+    LOG("MtSrvTradeRequestFilter.");
     return RET_OK;
 }
 
@@ -94,7 +94,7 @@ void APIENTRY MtSrvTradeRequestApply(RequestInfo* request, const int isdemo) {
 }
 
 int APIENTRY MtSrvTradeStopsFilter(const ConGroup* group, const ConSymbol* symbol, const TradeRecord* trade) {
-    LOG("MtSrvTradeStopsFilter.");
+    //LOG("MtSrvTradeStopsFilter.");
     return RET_OK;
 }
 
@@ -154,28 +154,5 @@ int APIENTRY MtSrvTradePendingsApply(const UserInfo* user, const ConGroup* group
     // not activate order
     return RET_OK_NONE;
 }
-
-int APIENTRY MtSrvTradeStopoutsFilter(const ConGroup* group, const ConSymbol* symbol, const int login, const double equity,
-                                      const double margin) {
-    LOG("MtSrvTradeStopoutsFilter.");
-    return RET_OK;
-}
-
-int APIENTRY MtSrvTradeStopoutsApply(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol,
-                                     TradeRecord* stopout) {
-    LOG("MtSrvTradeStopoutsApply. order = %d", stopout->order);
-    LOG_INFO(user);
-    LOG_INFO(group);
-    LOG_INFO(symbol);
-    LOG_INFO(stopout);
-    // Here, set user's balance to zero
-    return RET_OK;
-}
-
-void APIENTRY MtSrvTradesAddExt(TradeRecord* trade, const UserInfo* user, const ConSymbol* symb, const int mode) {
-    LOG("MtSrvTradesAddExt.");
-}
-
-void APIENTRY MtSrvTradesUpdate(TradeRecord* trade, UserInfo* user, const int mode) { LOG("MtSrvTradesUpdate."); }
 
 void APIENTRY MtSrvHistoryTickApply(const ConSymbol* symbol, FeedTick* inf) { Factory::GetProcessor()->TickApply(symbol, inf); }

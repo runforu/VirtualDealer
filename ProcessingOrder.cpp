@@ -11,7 +11,7 @@ bool ProcessingOrder::AddOrder(int order_id, HANDLE handle) {
             break;
         }
     }
-    LOG("|--> Adding an order to process %d %s ", order_id, index < MAX_PROCESSING_ORDER ? "successful" : "failed");
+    LOG("|--> Adding order (%d) to process %s ", order_id, index < MAX_PROCESSING_ORDER ? "successful" : "failed");
     return index < MAX_PROCESSING_ORDER;
 }
 
@@ -23,7 +23,7 @@ bool ProcessingOrder::ModifyOrder(int order_id, HANDLE handle) {
             break;
         }
     }
-    LOG("|--> Modify an order in processing %d %s ", order_id, index < MAX_PROCESSING_ORDER ? "successful" : "failed");
+    LOG("|--> Modify order (%d) in processing  %s ", order_id, index < MAX_PROCESSING_ORDER ? "successful" : "failed");
     return index < MAX_PROCESSING_ORDER;
 }
 
@@ -39,7 +39,7 @@ bool ProcessingOrder::RemoveOrder(int order_id) {
             break;
         }
     }
-    LOG("|--> Remove an order in processing %d %s ", order_id, index < MAX_PROCESSING_ORDER ? "successful" : "failed");
+    LOG("|--> Remove order (%d) in processing %d %s ", order_id, index < MAX_PROCESSING_ORDER ? "successful" : "failed");
     return index < MAX_PROCESSING_ORDER;
 }
 
@@ -50,7 +50,7 @@ bool ProcessingOrder::IsOrderProcessing(int order_id) {
             break;
         }
     }
-    LOG("|--> Order %d is in processing: %s ", order_id, index < MAX_PROCESSING_ORDER ? "yes" : "no");
+    LOG("|--> Order (%d) is in processing: %s ", order_id, index < MAX_PROCESSING_ORDER ? "yes" : "no");
     return index < MAX_PROCESSING_ORDER;
 }
 

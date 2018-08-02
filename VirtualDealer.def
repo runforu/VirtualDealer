@@ -7,14 +7,15 @@ EXPORTS
     MtSrvPluginCfgSet
     MtSrvPluginCfgNext
     MtSrvPluginCfgTotal
+
+	MtSrvTradeTransaction  
+    MtSrvTradeRequestFilter
     MtSrvTradeRequestApply
+
     MtSrvTradeStopsFilter
     MtSrvTradeStopsApply
+
     MtSrvTradePendingsFilter
     MtSrvTradePendingsApply
-    MtSrvTradeStopoutsFilter
-    MtSrvTradeStopoutsApply
-    MtSrvTradesAddExt
-    MtSrvTradesUpdate
-	MtSrvTradeTransaction
+
     MtSrvHistoryTickApply

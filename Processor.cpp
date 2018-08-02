@@ -569,10 +569,10 @@ void Processor::ProcessRequest(RequestInfo* request) {
     }
 
     Factory::GetServerInterface()->RequestsLock(request->id, m_manager.login);
-    HANDLE hThread = (HANDLE)_beginthread(DelayWrapper, 0, (LPVOID)request_helper);
+    HANDLE handle = (HANDLE)_beginthread(DelayWrapper, 0, (LPVOID)request_helper);
     Lock();
-    request_helper->m_handle = hThread;
-    m_processing_handle.AddHandle(hThread);
+    request_helper->m_handle = handle;
+    m_processing_handle.AddHandle(handle);
     Unlock();
     m_requests_total++;
 
@@ -639,9 +639,9 @@ bool Processor::ActivatePendingOrder(const UserInfo* user, const ConGroup* group
     }
 
     LOG("Begin a new thread to delay the pending order.");
-    HANDLE hThread = (HANDLE)_beginthread(DelayPendingTrigerWrapper, 0, (LPVOID)request_helper);
+    HANDLE handle = (HANDLE)_beginthread(DelayPendingTrigerWrapper, 0, (LPVOID)request_helper);
     Lock();
-    m_processing_order.ModifyOrder(trade->order, hThread);
+    m_processing_order.ModifyOrder(trade->order, handle);
     Unlock();
 
     m_requests_total++;
@@ -712,9 +712,9 @@ bool Processor::AllowSLTP(const UserInfo* user, const ConGroup* group, const Con
         goto without_delay;
     }
 
-    HANDLE hThread = (HANDLE)_beginthread(DelaySlTpTrigerWrapper, 0, (LPVOID)request_helper);
+    HANDLE handle = (HANDLE)_beginthread(DelaySlTpTrigerWrapper, 0, (LPVOID)request_helper);
     Lock();
-    m_processing_order.ModifyOrder(trade->order, hThread);
+    m_processing_order.ModifyOrder(trade->order, handle);
     Unlock();
 
     m_requests_total++;

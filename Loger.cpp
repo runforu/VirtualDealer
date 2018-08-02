@@ -4,7 +4,7 @@
 #include "Loger.h"
 
 #ifdef _RELEASE_LOG_
-
+Synchronizer Loger::s_synchronizer;
 const char* Loger::TradeTypeStr(int trade_type) {
     static char* trans_type_str[] = {
         "TT_ORDER_IE_OPEN",      "TT_ORDER_REQ_OPEN",  "TT_ORDER_MK_OPEN",     "TT_ORDER_PENDING_OPEN", "TT_ORDER_IE_CLOSE",

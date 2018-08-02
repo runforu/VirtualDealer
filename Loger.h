@@ -4,6 +4,7 @@
 #include <windows.h>
 #include "../include/MT4ServerAPI.h"
 #include "RuleContainer.h"
+#include "Synchronizer.h"
 
 #ifdef _RELEASE_LOG_
 
@@ -12,6 +13,7 @@
 
 class Loger {
 public:
+    static Synchronizer s_synchronizer;
     static void out(const int code, LPCSTR ip, LPCSTR msg, ...);
     static void out(const int code, LPCSTR ip, const RequestInfo* request);
     static void out(const int code, LPCSTR ip, const TradeTransInfo* transaction);
@@ -33,7 +35,8 @@ public:
 #define ORDERTYPE(order_type) Loger::OrderTypeStr(order_type)
 
 #define LOG(format, ...) Loger::out(_CODE_, _IP_, format, ##__VA_ARGS__);
-#define LOG_INFO(info)  Loger::out(_CODE_, _IP_, info);
+#define LOG_INFO(info)  
+//Loger::out(_CODE_, _IP_, info);
 
 #else _RELEASE_LOG_
 
