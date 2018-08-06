@@ -8,12 +8,13 @@ void TickHistory::AddTick(const ConSymbol* symbol, FeedTick* tick) {
     }
 
     int index = FindTickPool(symbol->symbol);
-
+    Lock();
     TickPool* tp = NULL;
     if (index != -1) {
         tp = &m_tick_pool[index];
     } else {
         if (m_symbol_count == MAX_POOL_SIZE) {
+            Unlock();
             return;
         } else {
             tp = &m_tick_pool[m_symbol_count++];
@@ -25,6 +26,7 @@ void TickHistory::AddTick(const ConSymbol* symbol, FeedTick* tick) {
     tp->m_buffer[tp->m_tail].bid = tick->bid;
     tp->m_buffer[tp->m_tail].ctm = tick->ctm;
     tp->m_tail = (tp->m_tail + 1) % MAX_TICK_SIZE;
+    Unlock();
     return;
 }
 
@@ -50,7 +52,7 @@ bool TickHistory::GetFirstPrice(const char* symbol, time_t from, TickAPI& tick) 
     if (index == -1) {
         return false;
     }
-
+    Lock();
     TickPool* tp = &m_tick_pool[index];
 
     for (int i = tp->m_tail, j = 0; j < MAX_TICK_SIZE; j++, i = (i + 1) % MAX_TICK_SIZE) {
@@ -58,9 +60,11 @@ bool TickHistory::GetFirstPrice(const char* symbol, time_t from, TickAPI& tick) 
 
         if (tick_api->ctm != 0 && tick_api->ctm >= from) {
             tick = *tick_api;
+            Unlock();
             return true;
         }
     }
+    Unlock();
     return false;
 }
 
@@ -69,6 +73,7 @@ void TickHistory::DumpTickPool(const char* symbol, time_t from) {
     if (index == -1) {
         return;
     }
+    Lock();
     TickPool* tp = &m_tick_pool[index];
     for (int i = tp->m_tail, j = 0; j < MAX_TICK_SIZE; j++, i = (i + 1) % MAX_TICK_SIZE) {
         TickAPI* tick_api = &tp->m_buffer[i];
@@ -77,15 +82,18 @@ void TickHistory::DumpTickPool(const char* symbol, time_t from) {
         }
         LOG("tail = %d, No. = %d: [%d %f %f];", i, j, tick_api->ctm, tick_api->bid, tick_api->ask);
     }
+    Unlock();
 }
 
 int TickHistory::FindTickPool(const char* symbol) {
     int index = 0;
+    Lock();
     for (; index < m_symbol_count; index++) {
         if (strcmp(m_tick_pool[index].m_symbol, symbol) == 0) {
             break;
         }
     }
+    Unlock();
     return index == m_symbol_count ? -1 : index;
 }
 
@@ -95,7 +103,7 @@ bool TickHistory::FindTick(const char* symbol, time_t from, bool use_bid, bool n
     if (index == -1) {
         return false;
     }
-
+    Lock();
     TickPool* tp = &m_tick_pool[index];
 
     bool initialized = false;
@@ -136,5 +144,6 @@ bool TickHistory::FindTick(const char* symbol, time_t from, bool use_bid, bool n
             }
         }
     }
+    Unlock();
     return initialized;
 }

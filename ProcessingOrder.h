@@ -3,7 +3,7 @@
 #include <windows.h>
 #include "Synchronizer.h"
 
-#define MAX_PROCESSING_ORDER 1024
+#define MAX_PROCESSING_ORDER 4096
 
 struct HandledOrder {
     int m_order_id;

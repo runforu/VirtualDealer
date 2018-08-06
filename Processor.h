@@ -2,10 +2,10 @@
 #define _PROCESSOR_H_
 
 #include "Config.h"
+#include "ProcessingHandle.h"
 #include "ProcessingOrder.h"
 #include "RuleContainer.h"
 #include "TickHistory.h"
-#include "ProcessingHandle.h"
 
 struct RequestHelper {
     RequestInfo* m_request_info;
@@ -95,13 +95,13 @@ private:
     static bool SpreadDiff(const char* group, char* symbol, TickAPI* tick);
 
     UINT Delay(LPVOID parameter);
-    static void __cdecl  DelayWrapper(LPVOID parameter);
+    static void __cdecl DelayWrapper(LPVOID parameter);
 
     UINT DelaySlTpTriger(LPVOID parameter);
-    static void __cdecl  DelaySlTpTrigerWrapper(LPVOID parameter);
+    static void __cdecl DelaySlTpTrigerWrapper(LPVOID parameter);
 
     UINT DelayPendingTriger(LPVOID parameter);
-    static void __cdecl  DelayPendingTrigerWrapper(LPVOID parameter);
+    static void __cdecl DelayPendingTrigerWrapper(LPVOID parameter);
 
     bool GetDelayOption(const char* symbol, const char* group, int client_login, int volume, int order_type,
                         PriceOption& price_option, int& delay_milisecond);

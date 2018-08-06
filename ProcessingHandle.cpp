@@ -10,7 +10,7 @@ bool ProcessingHandle::AddHandle(HANDLE handle) {
             break;
         }
     }
-    LOG("|--> Adding an handle to process %d %s ", handle, index < MAX_PROCESSING_HANADLE ? "successful" : "failed");
+    // LOG("|--> Adding an handle to process %d %s ", handle, index < MAX_PROCESSING_HANADLE ? "successful" : "failed");
     return index < MAX_PROCESSING_HANADLE;
 }
 
@@ -22,7 +22,7 @@ bool ProcessingHandle::RemoveHandle(HANDLE handle) {
             break;
         }
     }
-    LOG("|--> Remove an handle in processing %d %s ", handle, index < MAX_PROCESSING_HANADLE ? "successful" : "failed");
+    // LOG("|--> Remove an handle in processing %d %s ", handle, index < MAX_PROCESSING_HANADLE ? "successful" : "failed");
     return index < MAX_PROCESSING_HANADLE;
 }
 
@@ -33,7 +33,7 @@ bool ProcessingHandle::IsOrderProcessing(HANDLE handle) {
             break;
         }
     }
-    LOG("|--> Handle %d is in the queue: %s ", handle, index < MAX_PROCESSING_HANADLE ? "yes" : "no");
+    // LOG("|--> Handle %d is in the queue: %s ", handle, index < MAX_PROCESSING_HANADLE ? "yes" : "no");
     return index < MAX_PROCESSING_HANADLE;
 }
 

@@ -90,26 +90,15 @@ void APIENTRY MtSrvTradeRequestApply(RequestInfo* request, const int isdemo) {
     if (request != NULL && isdemo == FALSE) {
         Factory::GetProcessor()->ProcessRequest(request);
     }
-    LOG("MtSrvTradeRequestApply end.");
 }
 
 int APIENTRY MtSrvTradeStopsFilter(const ConGroup* group, const ConSymbol* symbol, const TradeRecord* trade) {
-    //LOG("MtSrvTradeStopsFilter.");
     return RET_OK;
 }
 
 int APIENTRY MtSrvTradeStopsApply(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol, TradeRecord* trade,
                                   const int isTP) {
     LOG("MtSrvTradeStopsApply.");
-
-    LOG("hit time = %d, isTP = %d.", Factory::GetServerInterface()->TradeTime(), isTP);
-
-#if 0
-    trade->close_price = 0.123;
-    Factory::GetServerInterface()->OrdersUpdate(trade, (UserInfo*)user, UPDATE_CLOSE);
-    LOG("-------------^^^^^^^^^^^^^^^^^---------------------");
-    return RET_OK_NONE;
-#endif
 
     // Here, delay tp sl
     if (Factory::GetProcessor()->AllowSLTP(user, group, symbol, trade, isTP)) {
@@ -123,32 +112,17 @@ int APIENTRY MtSrvTradeStopsApply(const UserInfo* user, const ConGroup* group, c
 }
 
 int APIENTRY MtSrvTradePendingsFilter(const ConGroup* group, const ConSymbol* symbol, const TradeRecord* trade) {
-    // LOG("MtSrvTradePendingsFilter. order = %d", trade->order);
-    // LOG("----------------------------------symbol->spread =  %d", symbol->spread);
     return RET_OK;
 }
 
 int APIENTRY MtSrvTradePendingsApply(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol,
                                      const TradeRecord* pending, TradeRecord* trade) {
     LOG("MtSrvTradePendingsApply.");
-
-    LOG("----------------------------------pending.open_time =  %d, pending.close_time = %d, pending->timestamp = %d; "
-        "trade.open_time = %d, trade.close_time = %d, trade->timestamp = %d, current time = %d",
-        pending->open_time, pending->close_time, pending->timestamp, trade->open_time, trade->close_time, trade->timestamp,
-        Factory::GetServerInterface()->TradeTime());
-
-#if 0
-    trade->open_price = 0.11;
-    Factory::GetServerInterface()->OrdersUpdate(trade, (UserInfo*)user, UPDATE_ACTIVATE);
-    LOG("-------------^^^^^^^^^^^^^^^^^---------------------");
-    return RET_OK_NONE;
-#endif
-
     // Here, delay activation
     if (Factory::GetProcessor()->ActivatePendingOrder(user, group, symbol, pending, trade)) {
         // activate order
         LOG("MtSrvTradePendingsApply RET_OK returned = activate order");
-        return RET_OK;
+        return RET_OK_NONE;
     }
     LOG("MtSrvTradePendingsApply RET_OK_NONE returned");
     // not activate order

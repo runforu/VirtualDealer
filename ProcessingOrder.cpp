@@ -23,7 +23,7 @@ bool ProcessingOrder::ModifyOrder(int order_id, HANDLE handle) {
             break;
         }
     }
-    LOG("|--> Modify order (%d) in processing  %s ", order_id, index < MAX_PROCESSING_ORDER ? "successful" : "failed");
+    LOG("|--> Modify order (%d) in processing  %s", order_id, index < MAX_PROCESSING_ORDER ? "successful" : "failed");
     return index < MAX_PROCESSING_ORDER;
 }
 
@@ -39,7 +39,7 @@ bool ProcessingOrder::RemoveOrder(int order_id) {
             break;
         }
     }
-    LOG("|--> Remove order (%d) in processing %d %s ", order_id, index < MAX_PROCESSING_ORDER ? "successful" : "failed");
+    LOG("|--> Remove order (%d) in processing %s ", order_id, index < MAX_PROCESSING_ORDER ? "successful" : "failed");
     return index < MAX_PROCESSING_ORDER;
 }
 

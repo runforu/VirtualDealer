@@ -4,6 +4,7 @@
 #include <time.h>
 #include <windows.h>
 #include "../include/MT4ServerAPI.h"
+#include "Loger.h"
 
 #define MAX_TICK_SIZE 64
 #define MAX_POOL_SIZE 128
@@ -27,6 +28,10 @@ public:
     TickHistory() : m_symbol_count(0) { ZeroMemory(m_tick_pool, sizeof(m_tick_pool)); }
 
 private:
+    inline void Lock() { m_synchronizer.Lock(); }
+    inline void Unlock() { m_synchronizer.Unlock(); }
+
+    Synchronizer m_synchronizer;
     bool FindTick(const char* symbol, time_t from, bool use_bid, bool max, TickAPI& tick);
     TickPool m_tick_pool[MAX_POOL_SIZE];
     int m_symbol_count;
