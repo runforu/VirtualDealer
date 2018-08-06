@@ -281,13 +281,13 @@ UINT Processor::DelaySlTpTriger(LPVOID parameter) {
     TrigerDelayHelper* helper = (TrigerDelayHelper*)parameter;
 
     if (Factory::GetServerInterface() == NULL) {
-        goto exit;
+        goto exit_label;
     }
 
     Sleep(helper->m_delay_milisecond);
 
     if (Factory::GetServerInterface() == NULL || m_is_shuting_down) {
-        goto exit;
+        goto exit_label;
     }
 
     //--- Modify the price
@@ -295,7 +295,7 @@ UINT Processor::DelaySlTpTriger(LPVOID parameter) {
     trade_record->close_price = GetPrice(helper, trade_record->cmd, trade_record->close_price);
     Factory::GetServerInterface()->OrdersUpdate(helper->m_trade_record, helper->m_user_info, UPDATE_CLOSE);
 
-exit:
+exit_label:
     InterlockedIncrement(&m_requests_processed);
     OrderProcessed(trade_record->order);
     delete helper->m_trade_record;
@@ -310,13 +310,13 @@ UINT Processor::DelayPendingTriger(LPVOID parameter) {
     TrigerDelayHelper* helper = (TrigerDelayHelper*)parameter;
 
     if (Factory::GetServerInterface() == NULL) {
-        goto exit;
+        goto exit_label;
     }
 
     Sleep(helper->m_delay_milisecond);
 
     if (Factory::GetServerInterface() == NULL || m_is_shuting_down) {
-        goto exit;
+        goto exit_label;
     }
 
     //--- Modify the price
@@ -325,7 +325,7 @@ UINT Processor::DelayPendingTriger(LPVOID parameter) {
     trade_record->open_price = GetPrice(helper, helper->m_pending_trade_record->cmd, helper->m_trade_record->open_price);
     Factory::GetServerInterface()->OrdersUpdate(helper->m_trade_record, helper->m_user_info, UPDATE_ACTIVATE);
 
-exit:
+exit_label:
     InterlockedIncrement(&m_requests_processed);
     //--- release order
     OrderProcessed(trade_record->order);
