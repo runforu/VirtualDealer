@@ -17,7 +17,7 @@ class ProcessingOrder {
     Synchronizer m_synchronizer;
 public:
     bool AddOrder(int order_id, HANDLE handle = 0);
-    bool ModifyOrder(int order_id, HANDLE handle = 0);
+    bool ModifyOrder(int order_id, HANDLE handle);
     bool RemoveOrder(int order_id);
     bool IsOrderProcessing(int order_id);
     bool IsEmpty();

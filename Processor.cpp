@@ -299,7 +299,6 @@ exit_label:
 inline void Processor::DelayPendingTrigerWrapper(LPVOID parameter) { Factory::GetProcessor()->DelayPendingTriger(parameter); }
 
 bool Processor::SpreadDiff(const char* group, char* symbol, TickAPI* tick, int diff) {
-    return false;
     ConSymbol con_symbol;
     if (Factory::GetServerInterface()->SymbolsGet(symbol, &con_symbol) != FALSE) {
         if (diff != 0) {
