@@ -3,7 +3,7 @@
 #include "Loger.h"
 #include "Processor.h"
 
-PluginInfo ExtPluginInfo = {"Virtual Dealer", 1, "Moa International.", {0}};
+PluginInfo ExtPluginInfo = {"Virtual Dealer", 1, "DH Copyright.", {0}};
 
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD ul_reason_for_call, LPVOID /*lpReserved*/) {
     switch (ul_reason_for_call) {
@@ -54,8 +54,8 @@ int APIENTRY MtSrvStartup(CServerInterface* server) {
 
 void APIENTRY MtSrvCleanup() {
     LOG("MtSrvCleanup");
-    Factory::SetServerInterface(NULL);
     Factory::GetProcessor()->Shutdown();
+    Factory::SetServerInterface(NULL);
 }
 
 int APIENTRY MtSrvPluginCfgSet(const PluginCfg* values, const int total) {
@@ -77,6 +77,7 @@ int APIENTRY MtSrvPluginCfgTotal() {
 
 int APIENTRY MtSrvTradeTransaction(TradeTransInfo* trans, const UserInfo* user, int* request_id) {
     LOG("MtSrvTradeTransaction.");
+    Factory::GetProcessor()->OnTradeTransaction(trans, user);
     return RET_OK;
 }
 
@@ -92,9 +93,7 @@ void APIENTRY MtSrvTradeRequestApply(RequestInfo* request, const int isdemo) {
     }
 }
 
-int APIENTRY MtSrvTradeStopsFilter(const ConGroup* group, const ConSymbol* symbol, const TradeRecord* trade) {
-    return RET_OK;
-}
+int APIENTRY MtSrvTradeStopsFilter(const ConGroup* group, const ConSymbol* symbol, const TradeRecord* trade) { return RET_OK; }
 
 int APIENTRY MtSrvTradeStopsApply(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol, TradeRecord* trade,
                                   const int isTP) {

@@ -3,11 +3,12 @@
 #include <windows.h>
 #include "Synchronizer.h"
 
-#define MAX_PROCESSING_HANADLE 4096
+#define MAX_PROCESSING_HANADLE 1024
 
 //--- Not thread safety
 class ProcessingHandle {
     HANDLE m_processing_handle[MAX_PROCESSING_HANADLE];
+    Synchronizer m_synchronizer;
 
 public:
     bool AddHandle(HANDLE handle );

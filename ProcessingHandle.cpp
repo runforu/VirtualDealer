@@ -4,49 +4,56 @@
 
 bool ProcessingHandle::AddHandle(HANDLE handle) {
     int index = 0;
+    m_synchronizer.Lock();
     for (; index < MAX_PROCESSING_HANADLE; index++) {
         if (m_processing_handle[index] == 0) {
             m_processing_handle[index] = handle;
             break;
         }
     }
-    // LOG("|--> Adding an handle to process %d %s ", handle, index < MAX_PROCESSING_HANADLE ? "successful" : "failed");
+    m_synchronizer.Unlock();
     return index < MAX_PROCESSING_HANADLE;
 }
 
 bool ProcessingHandle::RemoveHandle(HANDLE handle) {
     int index = 0;
-    for (index = 0; index < MAX_PROCESSING_HANADLE; index++) {
+    m_synchronizer.Lock();
+    for (; index < MAX_PROCESSING_HANADLE; index++) {
         if (m_processing_handle[index] == handle) {
             m_processing_handle[index] = 0;
             break;
         }
     }
-    // LOG("|--> Remove an handle in processing %d %s ", handle, index < MAX_PROCESSING_HANADLE ? "successful" : "failed");
+    m_synchronizer.Unlock();
     return index < MAX_PROCESSING_HANADLE;
 }
 
 bool ProcessingHandle::IsOrderProcessing(HANDLE handle) {
     int index = 0;
+    m_synchronizer.Lock();
     for (; index < MAX_PROCESSING_HANADLE; index++) {
         if (m_processing_handle[index] == handle) {
             break;
         }
     }
-    // LOG("|--> Handle %d is in the queue: %s ", handle, index < MAX_PROCESSING_HANADLE ? "yes" : "no");
+    m_synchronizer.Unlock();
     return index < MAX_PROCESSING_HANADLE;
 }
 
 bool ProcessingHandle::IsEmpty() {
-    for (int i = 0; i < MAX_PROCESSING_HANADLE; i++) {
-        if (m_processing_handle[i] != 0) {
-            return false;
+    int index = 0;
+    m_synchronizer.Lock();
+    for (; index < MAX_PROCESSING_HANADLE; index++) {
+        if (m_processing_handle[index] != 0) {
+            break;
         }
     }
-    return true;
+    m_synchronizer.Unlock();
+    return index >= MAX_PROCESSING_HANADLE;
 }
 
 void ProcessingHandle::CloseAll() {
+    m_synchronizer.Lock();
     for (int i = 0; i < MAX_PROCESSING_HANADLE; i++) {
         if (m_processing_handle[i] != 0) {
             TerminateThread(m_processing_handle[i], 0);
@@ -54,4 +61,5 @@ void ProcessingHandle::CloseAll() {
             m_processing_handle[i] = 0;
         }
     }
+    m_synchronizer.Unlock();
 }

@@ -75,7 +75,6 @@ void Config::Load(LPCSTR filename) {
     //--- sort config by name
     if (m_cfg != NULL && m_cfg_total > 0) qsort(m_cfg, m_cfg_total, sizeof(PluginCfg), SortByName);
     m_sync.Unlock();
-    LOG("------------Load----------Load------Load------");
 }
 //+------------------------------------------------------------------+
 //| save configs to file                                             |

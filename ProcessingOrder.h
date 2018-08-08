@@ -3,7 +3,7 @@
 #include <windows.h>
 #include "Synchronizer.h"
 
-#define MAX_PROCESSING_ORDER 4096
+#define MAX_PROCESSING_ORDER 2048
 
 struct HandledOrder {
     int m_order_id;
@@ -14,7 +14,7 @@ struct HandledOrder {
 //--- Not thread safety
 class ProcessingOrder {
     HandledOrder m_processing_order[MAX_PROCESSING_ORDER];
-
+    Synchronizer m_synchronizer;
 public:
     bool AddOrder(int order_id, HANDLE handle = 0);
     bool ModifyOrder(int order_id, HANDLE handle = 0);

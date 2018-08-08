@@ -13,6 +13,7 @@ struct RequestHelper {
     HANDLE m_handle;
     time_t m_start_time;
     int m_delay_milisecond;
+    int m_diff;
 };
 
 struct TrigerDelayHelper {
@@ -22,6 +23,7 @@ struct TrigerDelayHelper {
     PriceOption m_price_option;
     time_t m_start_time;
     int m_delay_milisecond;
+    int m_diff;
 };
 
 class Processor {
@@ -57,7 +59,7 @@ private:
     int m_requests_total;
     unsigned int m_requests_processed;
 
-    Synchronizer m_sync;
+    // Synchronizer m_sync;
 
     //--- any access to m_processing_order should be locked
     ProcessingOrder m_processing_order;
@@ -72,9 +74,9 @@ public:
                               TradeRecord* trade);
     bool AllowSLTP(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol, TradeRecord* trade, const int isTP);
     void TickApply(const ConSymbol* symbol, FeedTick* tick);
+    // for test purpose
+    void OnTradeTransaction(TradeTransInfo* trans, const UserInfo* user);
 
-    inline void Lock() { m_sync.Lock(); }
-    inline void Unlock() { m_sync.Unlock(); }
     void Processor::Initialize();
     void Shutdown(void);
 
@@ -92,7 +94,7 @@ private:
 
     static int GetSpreadDiff(RequestInfo* request);
     static int GetSpreadDiff(const char* group);
-    static bool SpreadDiff(const char* group, char* symbol, TickAPI* tick);
+    static bool SpreadDiff(const char* group, char* symbol, TickAPI* tick, int diff);
 
     UINT Delay(LPVOID parameter);
     static void __cdecl DelayWrapper(LPVOID parameter);
