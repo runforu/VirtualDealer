@@ -32,13 +32,13 @@ bool ProcessingOrder::ModifyOrder(int order_id, HANDLE handle) {
 bool ProcessingOrder::RemoveOrder(int order_id) {
     int index = 0;
     m_synchronizer.Lock();
-    for (index = 0; index < MAX_PROCESSING_ORDER; index++) {
+    for (; index < MAX_PROCESSING_ORDER; index++) {
         if (m_processing_order[index].m_order_id == order_id) {
             m_processing_order[index].m_order_id = 0;
             if (m_processing_order[index].m_handler != 0) {
                 CloseHandle(m_processing_order[index].m_handler);
+                m_processing_order[index].m_handler = 0;
             }
-            m_processing_order[index].m_handler = 0;
             break;
         }
     }

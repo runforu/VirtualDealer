@@ -16,10 +16,22 @@ struct RequestHelper {
     int m_diff;
 };
 
-struct TrigerDelayHelper {
+struct PendingDelayHelper {
     UserInfo* m_user_info;
-    const TradeRecord* m_pending_trade_record;
     TradeRecord* m_trade_record;
+    const TradeRecord* m_pending_trade_record;
+
+    PriceOption m_price_option;
+    time_t m_start_time;
+    int m_delay_milisecond;
+    int m_diff;
+};
+
+struct SlTpDelayHelper {
+    UserInfo* m_user_info;
+    int m_order_id;
+    int m_is_tp;
+
     PriceOption m_price_option;
     time_t m_start_time;
     int m_delay_milisecond;
@@ -61,9 +73,10 @@ private:
 
     // Synchronizer m_sync;
 
-    //--- any access to m_processing_order should be locked
-    ProcessingOrder m_processing_order;
+    ProcessingOrder m_processing_pending_order;
+    ProcessingOrder m_processing_sltp_order;
     ProcessingHandle m_processing_handle;
+
     LONG m_is_shuting_down;
 
 public:
@@ -86,15 +99,13 @@ private:
 
     //--- Hanlde triger order price like pending, sl and tp, trade cmd in
     //{OP_BUY,OP_SELL,OP_BUY_LIMIT,OP_SELL_LIMIT,OP_BUY_STOP,OP_SELL_STOP} price is the trigered price.
-    double GetPrice(TrigerDelayHelper* helper, int cmd, double trigered_price);
+    double GetPrice(const char* symbol, const UserInfo* user_info, int cmd, PriceOption price_option, time_t from, int diff,
+                    double trigered_price);
     void GetPrice(RequestHelper* helper, double* prices);
-
-    void OrderProcessed(int order_id);
-    void HandleProcessed(HANDLE handle);
 
     static int GetSpreadDiff(RequestInfo* request);
     static int GetSpreadDiff(const char* group);
-    static bool SpreadDiff(const char* group, char* symbol, TickAPI* tick, int diff);
+    static bool SpreadDiff(const char* group, const char* symbol, TickAPI* tick, int diff);
 
     UINT Delay(LPVOID parameter);
     static void __cdecl DelayWrapper(LPVOID parameter);
