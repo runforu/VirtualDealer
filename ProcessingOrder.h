@@ -3,11 +3,11 @@
 #include <windows.h>
 #include "Synchronizer.h"
 
-#define MAX_PROCESSING_ORDER 1024
+#define MAX_PROCESSING_ORDER 2048
 
 struct HandledOrder {
     int m_order_id;
-    HANDLE m_handler;
+    HANDLE m_handler;  // _beginthread HANDLE is not reliable
     HandledOrder() : m_order_id(0), m_handler(0) {}
 };
 

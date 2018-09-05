@@ -24,12 +24,15 @@ public:
     bool FindMinAsk(const char* symbol, time_t from, TickAPI& tick);
     bool GetFirstPrice(const char* symbol, time_t from, TickAPI& tick);
     void DumpTickPool(const char* symbol, time_t from = 0);
-    int FindTickPool(const char* symbol);
+
     TickHistory() : m_symbol_count(0) { ZeroMemory(m_tick_pool, sizeof(m_tick_pool)); }
 
 private:
     inline void Lock() { m_synchronizer.Lock(); }
     inline void Unlock() { m_synchronizer.Unlock(); }
+
+    // Not locked, be careful
+    int FindTickPool(const char* symbol);
 
     Synchronizer m_synchronizer;
     bool FindTick(const char* symbol, time_t from, bool use_bid, bool max, TickAPI& tick);

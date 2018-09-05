@@ -97,33 +97,36 @@ int APIENTRY MtSrvTradeStopsFilter(const ConGroup* group, const ConSymbol* symbo
 
 int APIENTRY MtSrvTradeStopsApply(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol, TradeRecord* trade,
                                   const int isTP) {
-    LOG("MtSrvTradeStopsApply.");
-
     // Here, delay tp sl
     if (Factory::GetProcessor()->AllowSLTP(user, group, symbol, trade, isTP)) {
         // activate tp/sl
-        LOG("MtSrvTradeStopsApply RET_OK returned = sl/tp closed");
+        LOG("MtSrvTradeStopsApply RET_OK returned: sl/tp closed");
         return RET_OK;
     }
     // not activate tp/sl
-    LOG("MtSrvTradeStopsApply RET_OK_NONE returned");
+    LOG("MtSrvTradeStopsApply RET_OK_NONE returned: delay sl/tp closing");
     return RET_OK_NONE;
 }
 
 int APIENTRY MtSrvTradePendingsFilter(const ConGroup* group, const ConSymbol* symbol, const TradeRecord* trade) {
+    //if (Factory::GetProcessor()->IsPendingProcessing(group, symbol, trade)) {
+    //    // order is in processing
+    //    Factory::GetServerInterface()->LogsOut(trade->order, "Virtual Dealer",
+    //        "MtSrvTradePendingsFilter: Order is already pending.");
+    //    return RET_OK_NONE;
+    //}
     return RET_OK;
 }
 
 int APIENTRY MtSrvTradePendingsApply(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol,
                                      const TradeRecord* pending, TradeRecord* trade) {
-    LOG("MtSrvTradePendingsApply.");
     // Here, delay activation
     if (Factory::GetProcessor()->ActivatePendingOrder(user, group, symbol, pending, trade)) {
         // activate order
-        LOG("MtSrvTradePendingsApply RET_OK returned = activate order");
-        return RET_OK_NONE;
+        LOG("MtSrvTradePendingsApply RET_OK returned: activate order immediately");
+        return RET_OK;
     }
-    LOG("MtSrvTradePendingsApply RET_OK_NONE returned");
+    LOG("MtSrvTradePendingsApply RET_OK_NONE returned: delay activating order");
     // not activate order
     return RET_OK_NONE;
 }

@@ -207,9 +207,8 @@ const char* FileLoger::OrderTypeStr(int order_type) {
     return price_option_str[order_type];
 }
 
-#else //_FILE_LOG_
+#else  //_FILE_LOG_
 
-Synchronizer Loger::s_synchronizer;
 const char* Loger::TradeTypeStr(int trade_type) {
     static char* trans_type_str[] = {
         "TT_ORDER_IE_OPEN",      "TT_ORDER_REQ_OPEN",  "TT_ORDER_MK_OPEN",     "TT_ORDER_PENDING_OPEN", "TT_ORDER_IE_CLOSE",
@@ -267,16 +266,20 @@ const char* Loger::OrderTypeStr(int order_type) {
     return price_option_str[order_type];
 }
 
+Synchronizer Loger::s_synchronizer;
+
 void Loger::out(const int code, LPCSTR ip, LPCSTR msg, ...) {
     if (Factory::GetServerInterface() == NULL || msg == NULL) {
         return;
     }
 
     char buffer[1024];
+    s_synchronizer.Lock();
     va_list arg_ptr;
     va_start(arg_ptr, msg);
     _vsnprintf(buffer, sizeof(buffer) - 1, msg, arg_ptr);
     va_end(arg_ptr);
+    s_synchronizer.Unlock();
 
     Factory::GetServerInterface()->LogsOut(code, ip, buffer);
 }
@@ -387,6 +390,7 @@ void Loger::out(const int code, LPCSTR ip, const TradeRecord* trade_record) {
                "    gw_volume =        %d\n"
                "    expiration =       %d\n"
                "    reason =           %s\n"
+               "    conv_rates =       [%f %f]\n"
                "    commission =       %f\n"
                "    commission_agent = %f\n"
                "    storage =          %f\n"
@@ -401,9 +405,10 @@ void Loger::out(const int code, LPCSTR ip, const TradeRecord* trade_record) {
                trade_record->order, trade_record->login, trade_record->symbol, trade_record->digits,
                TradeCmdStr(trade_record->cmd), trade_record->volume, trade_record->open_time, trade_record->state,
                trade_record->open_price, trade_record->sl, trade_record->tp, trade_record->close_time, trade_record->gw_volume,
-               trade_record->expiration, trade_record->reason, trade_record->commission, trade_record->commission_agent,
-               trade_record->storage, trade_record->close_price, trade_record->profit, trade_record->taxes, trade_record->magic,
-               trade_record->comment, trade_record->activation, trade_record->margin_rate, trade_record->timestamp);
+               trade_record->expiration, trade_record->reason, trade_record->conv_rates[0], trade_record->conv_rates[1],
+               trade_record->commission, trade_record->commission_agent, trade_record->storage, trade_record->close_price,
+               trade_record->profit, trade_record->taxes, trade_record->magic, trade_record->comment, trade_record->activation,
+               trade_record->margin_rate, trade_record->timestamp);
 }
 
 #endif

@@ -7,8 +7,10 @@ void TickHistory::AddTick(const ConSymbol* symbol, FeedTick* tick) {
         return;
     }
 
-    int index = FindTickPool(symbol->symbol);
     Lock();
+
+    int index = FindTickPool(symbol->symbol);
+
     TickPool* tp = NULL;
     if (index != -1) {
         tp = &m_tick_pool[index];
@@ -47,12 +49,15 @@ bool TickHistory::FindMinAsk(const char* symbol, time_t from, TickAPI& tick) {
 }
 
 bool TickHistory::GetFirstPrice(const char* symbol, time_t from, TickAPI& tick) {
+    Lock();
+
     int index = FindTickPool(symbol);
 
     if (index == -1) {
+        Unlock();
         return false;
     }
-    Lock();
+
     TickPool* tp = &m_tick_pool[index];
 
     for (int i = tp->m_tail, j = 0; j < MAX_TICK_SIZE; j++, i = (i + 1) % MAX_TICK_SIZE) {
@@ -69,11 +74,13 @@ bool TickHistory::GetFirstPrice(const char* symbol, time_t from, TickAPI& tick) 
 }
 
 void TickHistory::DumpTickPool(const char* symbol, time_t from) {
+    Lock();
     int index = FindTickPool(symbol);
     if (index == -1) {
+        Unlock();
         return;
     }
-    Lock();
+
     TickPool* tp = &m_tick_pool[index];
     for (int i = tp->m_tail, j = 0; j < MAX_TICK_SIZE; j++, i = (i + 1) % MAX_TICK_SIZE) {
         TickAPI* tick_api = &tp->m_buffer[i];
@@ -87,23 +94,23 @@ void TickHistory::DumpTickPool(const char* symbol, time_t from) {
 
 int TickHistory::FindTickPool(const char* symbol) {
     int index = 0;
-    Lock();
     for (; index < m_symbol_count; index++) {
         if (strcmp(m_tick_pool[index].m_symbol, symbol) == 0) {
             break;
         }
     }
-    Unlock();
     return index == m_symbol_count ? -1 : index;
 }
 
 bool TickHistory::FindTick(const char* symbol, time_t from, bool use_bid, bool need_max, TickAPI& tick) {
+    Lock();
     int index = FindTickPool(symbol);
 
     if (index == -1) {
+        Unlock();
         return false;
     }
-    Lock();
+
     TickPool* tp = &m_tick_pool[index];
 
     bool initialized = false;

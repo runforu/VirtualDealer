@@ -36,7 +36,8 @@ bool ProcessingOrder::RemoveOrder(int order_id) {
         if (m_processing_order[index].m_order_id == order_id) {
             m_processing_order[index].m_order_id = 0;
             if (m_processing_order[index].m_handler != 0) {
-                CloseHandle(m_processing_order[index].m_handler);
+                // Do not close handler because _endthread do it
+                // CloseHandle(m_processing_order[index].m_handler);
                 m_processing_order[index].m_handler = 0;
             }
             break;

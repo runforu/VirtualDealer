@@ -27,14 +27,14 @@ public:
     static const char* OrderTypeStr(int order_type);
 };
 
-#define TRADETYPE(trade_type) Loger::TradeTypeStr(trade_type)
-#define TRADECMD(trade_cmd) Loger::TradeCmdStr(trade_cmd)
-#define PRICEOPTION(price_option) Loger::PriceOptionStr(price_option)
-#define ORDERTYPE(order_type) Loger::OrderTypeStr(order_type)
-#define LOG(prefix, id, format, ...) Loger::out(prefix, id, format, ##__VA_ARGS__)
-#define LOG_INFO(prefix, id, info) Loger::out(prefix, id, info)
+#define TRADETYPE(trade_type) FileLoger::TradeTypeStr(trade_type)
+#define TRADECMD(trade_cmd) FileLoger::TradeCmdStr(trade_cmd)
+#define PRICEOPTION(price_option) FileLoger::PriceOptionStr(price_option)
+#define ORDERTYPE(order_type) FileLoger::OrderTypeStr(order_type)
+#define LOG(prefix, id, format, ...) FileLoger::out(prefix, id, format, ##__VA_ARGS__)
+#define LOG_INFO(prefix, id, info) FileLoger::out(prefix, id, info)
 
-#endif
+#else // _FILE_LOG_
 
 #define _CODE_ 31415
 #define _IP_ "VirtualDealer"
@@ -64,6 +64,7 @@ public:
 #define LOG(format, ...) Loger::out(_CODE_, _IP_, format, ##__VA_ARGS__)
 #define LOG_INFO(info) Loger::out(_CODE_, _IP_, info)
 
+#endif //_FILE_LOG_
 
 #else  //_RELEASE_LOG_
 

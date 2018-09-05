@@ -18,9 +18,11 @@ struct RequestHelper {
 
 struct PendingDelayHelper {
     UserInfo* m_user_info;
-    TradeRecord* m_trade_record;
+    // TradeRecord* m_trade_record;
     const TradeRecord* m_pending_trade_record;
-
+    const ConGroup* m_group;
+    const ConSymbol* m_symbol;
+    double open_price;
     PriceOption m_price_option;
     time_t m_start_time;
     int m_delay_milisecond;
@@ -71,7 +73,7 @@ private:
     int m_requests_total;
     unsigned int m_requests_processed;
 
-    // Synchronizer m_sync;
+    Synchronizer m_synchronizer;
 
     ProcessingOrder m_processing_pending_order;
     ProcessingOrder m_processing_sltp_order;
@@ -89,6 +91,8 @@ public:
     void TickApply(const ConSymbol* symbol, FeedTick* tick);
     // for test purpose
     void OnTradeTransaction(TradeTransInfo* trans, const UserInfo* user);
+
+    bool IsPendingProcessing(const ConGroup* group, const ConSymbol* symbol, const TradeRecord* trade);
 
     void Processor::Initialize();
     void Shutdown(void);
