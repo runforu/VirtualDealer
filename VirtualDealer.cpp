@@ -109,17 +109,12 @@ int APIENTRY MtSrvTradeStopsApply(const UserInfo* user, const ConGroup* group, c
 }
 
 int APIENTRY MtSrvTradePendingsFilter(const ConGroup* group, const ConSymbol* symbol, const TradeRecord* trade) {
-    //if (Factory::GetProcessor()->IsPendingProcessing(group, symbol, trade)) {
-    //    // order is in processing
-    //    Factory::GetServerInterface()->LogsOut(trade->order, "Virtual Dealer",
-    //        "MtSrvTradePendingsFilter: Order is already pending.");
-    //    return RET_OK_NONE;
-    //}
     return RET_OK;
 }
 
 int APIENTRY MtSrvTradePendingsApply(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol,
                                      const TradeRecord* pending, TradeRecord* trade) {
+    return RET_OK; //disable pending order delaying
     // Here, delay activation
     if (Factory::GetProcessor()->ActivatePendingOrder(user, group, symbol, pending, trade)) {
         // activate order

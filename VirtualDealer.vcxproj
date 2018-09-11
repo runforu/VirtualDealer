@@ -120,7 +120,7 @@
       <OutputFile>.\Release/DealerHelper.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>..\debuginfo.exe $(TargetPath)</Command>
+      <Command>.\debuginfo.exe $(TargetPath)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
