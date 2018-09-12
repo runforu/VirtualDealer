@@ -5,7 +5,9 @@
 #include "Loger.h"
 #include "RuleContainer.h"
 
-RuleContainer::RuleContainer() : m_rule_total(0) { ZeroMemory(m_rules, sizeof(m_rules)); }
+RuleContainer::RuleContainer() : m_rule_total(0) {
+    ZeroMemory(m_rules, sizeof(m_rules));
+}
 
 bool RuleContainer::ParseRule(const char* line, Rule* rule) {
     if (line == NULL || strlen(line) == 0 && rule == NULL) {
@@ -95,7 +97,7 @@ bool RuleContainer::ParseRule(const char* line, Rule* rule) {
         return false;
     }
     LOG("rule ---  price_option = %s [%s]", pchar, PRICEOPTION(rule->m_price_option));
-    
+
     return true;
 }
 
@@ -126,7 +128,7 @@ bool RuleContainer::Search(const char* symbol, const char* group, int client_log
     LOG("Search symbole = %s, group = %s, login = %d, volume = %d, order type = %s", symbol, group, client_login, volume,
         ORDERTYPE(order_type));
     for (int i = 0; i < m_rule_total; i++) {
-        //LOG("--> rule name = %s", this->m_rules[i].m_name);
+        // LOG("--> rule name = %s", this->m_rules[i].m_name);
         if (strcmp(this->m_rules[i].m_symbol, "*") != 0 && strcmp(symbol, this->m_rules[i].m_symbol) != 0) {
             continue;
         }

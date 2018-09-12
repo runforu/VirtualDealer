@@ -261,7 +261,9 @@ bool Processor::GetDelayOption(const char* symbol, const char* group, int login,
     return true;
 }
 
-int Processor::GetSpreadDiff(RequestInfo* request) { return GetSpreadDiff(request->group); }
+int Processor::GetSpreadDiff(RequestInfo* request) {
+    return GetSpreadDiff(request->group);
+}
 
 int Processor::GetSpreadDiff(const char* group) {
     ConGroup con_group;
@@ -351,11 +353,8 @@ UINT Processor::Delay(LPVOID parameter) {
 
     Factory::GetServerInterface()->RequestsConfirm(request_helper->m_request_info->id, &m_manager, prices);
 
-    char log_buf[256];
-    snprintf(log_buf, sizeof(log_buf) - 1, "request [%d] with trade price [%f, %f] confirmed at prices [%f, %f]",
-             request_helper->m_request_info->id, request_helper->m_request_info->trade.price,
-             request_helper->m_request_info->trade.price, prices[0], prices[1]);
-    Factory::GetServerInterface()->LogsOut(31415, "Virtual Dealer", log_buf);
+    LOG("request [%d] with trade price [%f, %f] confirmed at prices [%f, %f]", request_helper->m_request_info->id,
+        request_helper->m_request_info->trade.price, request_helper->m_request_info->trade.price, prices[0], prices[1]);
 
 exit_label:
     InterlockedIncrement(&m_requests_processed);
@@ -475,13 +474,11 @@ UINT Processor::DelayPendingTriger(LPVOID parameter) {
                                                                                      trade_record.open_price, helper->m_symbol);
     Factory::GetServerInterface()->OrdersUpdate(&trade_record, helper->m_user_info, UPDATE_ACTIVATE);
 
-    char log_buf[256];
-    snprintf(log_buf, sizeof(log_buf) - 1, "Pending order [%d] activated at price %f [original price %f]", trade_record.order,
-             trade_record.open_price, helper->open_price);
-    Factory::GetServerInterface()->LogsOut(31415, "Virtual Dealer", log_buf);
+    LOG("Pending order [%d] activated at price %f [original price %f]", trade_record.order, trade_record.open_price,
+        helper->open_price);
 
 exit_label:
-    Factory::GetServerInterface()->LogsOut(trade_record.order, "Virtual Dealer", "A pending order complete");
+    LOG("A pending order complete");
     InterlockedIncrement(&m_requests_processed);
     m_processing_pending_order.RemoveOrder(trade_record.order);
     delete helper;
@@ -504,8 +501,7 @@ bool Processor::ActivatePendingOrder(const UserInfo* user, const ConGroup* group
     }
 
     if (m_processing_pending_order.IsOrderProcessing(trade->order)) {
-        Factory::GetServerInterface()->LogsOut(trade->order, "Virtual Dealer",
-                                               "ActivatePendingOrder: Order is already pending.");
+        LOG("ActivatePendingOrder: Order is already pending.");
         //--- the order is delayed already
         return false;
     }
@@ -514,12 +510,6 @@ bool Processor::ActivatePendingOrder(const UserInfo* user, const ConGroup* group
         LOG("ActivatePendingOrder: pending order processing queue overflow");
         return true;
     }
-    LOG("DelayPendingTriger-----------------pending-trade-tr");
-    LOG_INFO(pending);
-    LOG_INFO(trade);
-    TradeRecord tr;
-    Factory::GetServerInterface()->OrdersGet(pending->order, &tr);
-    LOG_INFO(&tr);
 
     //--- reinitialize if configuration changed
     if (InterlockedExchange(&m_reinitialize_flag, 0) != 0) {
@@ -593,14 +583,11 @@ UINT Processor::DelaySlTpTriger(LPVOID parameter) {
     trade_record.close_time = helper->m_start_time + 1;
     Factory::GetServerInterface()->OrdersUpdate(&trade_record, helper->m_user_info, UPDATE_CLOSE);
 
-    char log_buf[256];
-    snprintf(log_buf, sizeof(log_buf) - 1, "trade [%d] with %s price %f closed at price %f as %s", trade_record.order,
-             trade_record.comment, helper->m_is_tp ? trade_record.tp : trade_record.sl, trade_record.close_price,
-             trade_record.comment);
-    Factory::GetServerInterface()->LogsOut(31415, "Virtual Dealer", log_buf);
+    LOG("trade [%d] with %s price %f closed at price %f as %s", trade_record.order, trade_record.comment,
+        helper->m_is_tp ? trade_record.tp : trade_record.sl, trade_record.close_price, trade_record.comment);
 
 exit_label:
-    Factory::GetServerInterface()->LogsOut(trade_record.order, "Virtual Dealer", "A sl/tp order complete");
+    LOG("A sl/tp order complete");
     InterlockedIncrement(&m_requests_processed);
     m_processing_sltp_order.RemoveOrder(trade_record.order);
     delete helper;
@@ -623,8 +610,7 @@ bool Processor::AllowSLTP(const UserInfo* user, const ConGroup* group, const Con
     }
 
     if (m_processing_sltp_order.IsOrderProcessing(trade->order)) {
-        Factory::GetServerInterface()->LogsOut(trade->order, "Virtual Dealer",
-                                               "AllowSLTP: Order is already in processing queue.");
+        LOG("AllowSLTP: Order is already in processing queue.");
         return false;
     }
 
@@ -676,7 +662,9 @@ without_delay:
     return true;
 }
 
-void Processor::TickApply(const ConSymbol* symbol, FeedTick* tick) { m_tick_history.AddTick(symbol, tick); }
+void Processor::TickApply(const ConSymbol* symbol, FeedTick* tick) {
+    m_tick_history.AddTick(symbol, tick);
+}
 
 void Processor::OnTradeTransaction(TradeTransInfo* trans, const UserInfo* user) {
 #if 0

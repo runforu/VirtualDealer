@@ -93,7 +93,9 @@ void APIENTRY MtSrvTradeRequestApply(RequestInfo* request, const int isdemo) {
     }
 }
 
-int APIENTRY MtSrvTradeStopsFilter(const ConGroup* group, const ConSymbol* symbol, const TradeRecord* trade) { return RET_OK; }
+int APIENTRY MtSrvTradeStopsFilter(const ConGroup* group, const ConSymbol* symbol, const TradeRecord* trade) {
+    return RET_OK;
+}
 
 int APIENTRY MtSrvTradeStopsApply(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol, TradeRecord* trade,
                                   const int isTP) {
@@ -114,7 +116,7 @@ int APIENTRY MtSrvTradePendingsFilter(const ConGroup* group, const ConSymbol* sy
 
 int APIENTRY MtSrvTradePendingsApply(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol,
                                      const TradeRecord* pending, TradeRecord* trade) {
-    return RET_OK; //disable pending order delaying
+    return RET_OK;
     // Here, delay activation
     if (Factory::GetProcessor()->ActivatePendingOrder(user, group, symbol, pending, trade)) {
         // activate order
@@ -126,4 +128,6 @@ int APIENTRY MtSrvTradePendingsApply(const UserInfo* user, const ConGroup* group
     return RET_OK_NONE;
 }
 
-void APIENTRY MtSrvHistoryTickApply(const ConSymbol* symbol, FeedTick* inf) { Factory::GetProcessor()->TickApply(symbol, inf); }
+void APIENTRY MtSrvHistoryTickApply(const ConSymbol* symbol, FeedTick* inf) {
+    Factory::GetProcessor()->TickApply(symbol, inf);
+}

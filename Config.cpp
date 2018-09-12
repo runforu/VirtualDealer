@@ -7,7 +7,9 @@
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-Config::Config() : m_cfg(NULL), m_cfg_total(0), m_cfg_max(0) { m_filename[0] = 0; }
+Config::Config() : m_cfg(NULL), m_cfg_total(0), m_cfg_max(0) {
+    m_filename[0] = 0;
+}
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -272,7 +274,9 @@ int Config::SortByName(const void* left, const void* right) {
     return strcmp(((PluginCfg*)left)->name, ((PluginCfg*)right)->name);
 }
 
-int Config::SearchByName(const void* left, const void* right) { return strcmp((char*)left, ((PluginCfg*)right)->name); }
+int Config::SearchByName(const void* left, const void* right) {
+    return strcmp((char*)left, ((PluginCfg*)right)->name);
+}
 
 int Config::GetInteger(LPCSTR name, int* value, LPCSTR defvalue) {
     PluginCfg* config = NULL;

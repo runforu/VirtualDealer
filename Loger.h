@@ -8,33 +8,6 @@
 
 #ifdef _RELEASE_LOG_
 
-#ifdef _FILE_LOG_
-
-class FileLoger {
-public:
-    static void out(const int code, LPCSTR ip, LPCSTR msg, ...);
-    static void out(const int code, LPCSTR ip, const RequestInfo* request);
-    static void out(const int code, LPCSTR ip, const TradeTransInfo* transaction);
-    static void out(const int code, LPCSTR ip, const UserInfo* user_info);
-    static void out(const int code, LPCSTR ip, const ConGroup* con_group);
-    static void out(const int code, LPCSTR ip, const ConSymbol* con_symbol);
-    static void out(const int code, LPCSTR ip, const TradeRecord* trade_record);
-    static void out(const int code, LPCSTR ip, const TickAPI* tick);
-    static void out(const int code, LPCSTR ip, const Rule* rule);
-    static const char* TradeTypeStr(int trade_type);
-    static const char* TradeCmdStr(int trade_cmd);
-    static const char* PriceOptionStr(PriceOption price_option);
-    static const char* OrderTypeStr(int order_type);
-};
-
-#define TRADETYPE(trade_type) FileLoger::TradeTypeStr(trade_type)
-#define TRADECMD(trade_cmd) FileLoger::TradeCmdStr(trade_cmd)
-#define PRICEOPTION(price_option) FileLoger::PriceOptionStr(price_option)
-#define ORDERTYPE(order_type) FileLoger::OrderTypeStr(order_type)
-#define LOG(prefix, id, format, ...) FileLoger::out(prefix, id, format, ##__VA_ARGS__)
-#define LOG_INFO(prefix, id, info) FileLoger::out(prefix, id, info)
-
-#else // _FILE_LOG_
 
 #define _CODE_ 31415
 #define _IP_ "VirtualDealer"
@@ -63,8 +36,6 @@ public:
 #define ORDERTYPE(order_type) Loger::OrderTypeStr(order_type)
 #define LOG(format, ...) Loger::out(_CODE_, _IP_, format, ##__VA_ARGS__)
 #define LOG_INFO(info) Loger::out(_CODE_, _IP_, info)
-
-#endif //_FILE_LOG_
 
 #else  //_RELEASE_LOG_
 
