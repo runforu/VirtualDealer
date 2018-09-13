@@ -241,7 +241,7 @@ int FindToken(const char *source, const char *delimiter, const char *symbol) {
     }
 
     char *pstr; 
-    char buf[1024];
+    char buf[256];
     strncpy_s(buf, source, sizeof(buf));
 
     char *token = strtok_s(buf, delimiter, &pstr);
