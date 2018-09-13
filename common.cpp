@@ -1,5 +1,6 @@
 #include <windows.h>
 #include "common.h"
+#include "Loger.h"
 
 static const double ExtDecimalArray[9] = {1.0, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, 10000000.0, 100000000.0};
 
@@ -232,4 +233,23 @@ bool IsDigitalStr(char* string) {
         string++;
     }
     return true;
+}
+
+int FindToken(const char *source, const char *delimiter, const char *symbol) {
+    if (source == NULL || delimiter == NULL || symbol == NULL) {
+        return -1;
+    }
+
+    char *pstr; 
+    char buf[1024];
+    strncpy_s(buf, source, sizeof(buf));
+
+    char *token = strtok_s(buf, delimiter, &pstr);
+    while (token != NULL) {
+        if (strcmp(symbol, token) == 0) {
+            return token - buf;
+        }
+        token = strtok_s(NULL, delimiter, &pstr);
+    }
+    return -1;
 }

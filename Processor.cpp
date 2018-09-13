@@ -221,12 +221,18 @@ bool Processor::GetDelayOption(const char* symbol, const char* group, int login,
         //--- apply global rule
 
         //--- global symbol check
-        if (strcmp(m_global_rule_symbol, "*") != 0 && strcmp(m_global_rule_symbol, symbol) != 0) {
+        // if (strcmp(m_global_rule_symbol, "*") != 0 && strcmp(m_global_rule_symbol, symbol) != 0) {
+        //     return false;
+        // }
+        if (FindToken(m_global_rule_symbol, "|,", "*") == -1 && FindToken(m_global_rule_symbol, "|,", symbol) == -1) {
             return false;
         }
 
         //--- global group check
-        if (strcmp(m_global_rule_group, "*") != 0 && strcmp(m_global_rule_group, group) != 0) {
+        // if (strcmp(m_global_rule_group, "*") != 0 && strcmp(m_global_rule_group, group) != 0) {
+        //     return false;
+        // }
+        if (FindToken(m_global_rule_group, "|,", "*") == -1 && FindToken(m_global_rule_group, "|,", group) == -1) {
             return false;
         }
 

@@ -52,8 +52,8 @@ private:
     int m_disable_virtual_dealer;
 
     //--- default rule to filter transanction
-    char m_global_rule_symbol[12];
-    char m_global_rule_group[16];
+    char m_global_rule_symbol[256];
+    char m_global_rule_group[256];
     int m_global_rule_login;
     int m_global_rule_min_volume;
     int m_global_rule_max_volume;

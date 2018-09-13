@@ -39,4 +39,6 @@ int ToOrderType(const char* type, int default_value);
 
 bool IsDigitalStr(char* string);
 
+int FindToken(const char *source, const char *delimiter, const char *symbol);
+
 #endif  // !_COMMON_H_
