@@ -4,6 +4,8 @@
 #include <windows.h>
 #include "../include/MT4ServerAPI.h"
 #include "common.h"
+#include "Synchronizer.h"
+#include "RuleContainer.h"
 
 #ifdef _RELEASE_LOG_
 
@@ -11,6 +13,8 @@
 #define _IP_ "OrderExecuter"
 
 class Loger {
+    static Synchronizer s_synchronizer;
+
 public:
     static void out(const int code, LPCSTR ip, LPCSTR msg, ...);
     static void out(const int code, LPCSTR ip, const RequestInfo* request);
@@ -20,9 +24,11 @@ public:
     static void out(const int code, LPCSTR ip, const ConSymbol* con_symbol);
     static void out(const int code, LPCSTR ip, const TradeRecord* trade_record);
     static void out(const int code, LPCSTR ip, const TickAPI* tick);
+    static void out(const int code, LPCSTR ip, const Rule* rule);
     static const char* TradeTypeStr(int trade_type);
     static const char* TradeCmdStr(int trade_cmd);
     static const char* OrderTypeStr(int order_type);
+    static const char* PriceOptionStr(PriceOption price_option);
 };
 
 class FuncWarder {
@@ -36,7 +42,7 @@ public:
     ~FuncWarder() {
         Loger::out(_CODE_, _IP_, "<<<------------------------------     %s", m_function_name);
     }
-}; 
+};
 
 #define TRADETYPE(trade_type) Loger::TradeTypeStr(trade_type)
 #define TRADECMD(trade_cmd) Loger::TradeCmdStr(trade_cmd)

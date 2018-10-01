@@ -1,5 +1,5 @@
-#ifndef _FILECONFIG_H_
-#define _FILECONFIG_H_
+#ifndef _RULECONTAINER_H_
+#define _RULECONTAINER_H_
 
 #include <time.h>
 #include <windows.h>
@@ -43,4 +43,4 @@ private:
     ~RuleContainer() {}
 };
 
-#endif  //--- _FILECONFIG_H_
+#endif  //--- _RULECONTAINER_H_

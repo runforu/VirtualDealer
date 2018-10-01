@@ -5,6 +5,7 @@
 #include <windows.h>
 #include "../include/MT4ServerAPI.h"
 #include "Loger.h"
+#include "Synchronizer.h"
 
 #define MAX_TICK_SIZE 64
 #define MAX_POOL_SIZE 128
