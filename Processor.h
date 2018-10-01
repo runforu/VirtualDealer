@@ -82,7 +82,9 @@ private:
     LONG m_is_shuting_down;
 
 public:
-    inline void Reinitialize() { InterlockedExchange(&m_reinitialize_flag, 1); }
+    inline void Reinitialize() {
+        InterlockedExchange(&m_reinitialize_flag, 1);
+    }
     void ShowStatus();
     void ProcessRequest(RequestInfo* request);
     bool ActivatePendingOrder(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol, const TradeRecord* pending,

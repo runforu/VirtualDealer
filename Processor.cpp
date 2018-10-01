@@ -7,8 +7,8 @@
 void Processor::GetPrice(RequestHelper* helper, double* prices) {
     RequestInfo* request_info = helper->m_request_info;
 
-    // LOG("request_info->prices[0] = %f, request_info->prices[1] = %f, request_info->trade.price = %f.",
-    // request_info->prices[0], request_info->prices[1], request_info->trade.price);
+    LOG("request_info->prices[0] = %f, request_info->prices[1] = %f, request_info->trade.price = %f.", request_info->prices[0],
+        request_info->prices[1], request_info->trade.price);
     prices[0] = request_info->trade.price;
     prices[1] = request_info->trade.price;
 
@@ -382,7 +382,7 @@ void Processor::ProcessRequest(RequestInfo* request) {
     if (Factory::GetServerInterface() == NULL) {
         return;
     }
-
+    LOG("-------------------------------------------------------------------------------------------------------");
     LOG_INFO(request);
     LOG_INFO(&request->trade);
 
@@ -391,15 +391,18 @@ void Processor::ProcessRequest(RequestInfo* request) {
         Initialize();
     }
 
+    request->prices[0] = request->trade.price;
+    request->prices[1] = request->trade.price;
     //--- plugin disabled
     if (m_disable_virtual_dealer == 1) {
+        LOG("plugin disabled, exit with confirmed price = %f.", request->trade.price);
         Factory::GetServerInterface()->RequestsConfirm(request->id, &m_manager, request->prices);
-        LOG("m_disable_virtual_dealer == 1.");
         return;
     }
 
     TradeTransInfo* trade = &request->trade;
     if (trade->type < TT_ORDER_IE_OPEN || trade->type > TT_ORDER_MK_CLOSE || trade->type == TT_ORDER_PENDING_OPEN) {
+        LOG("trade type is not allowed to delay, exit with confirmed price = %f.");
         Factory::GetServerInterface()->RequestsConfirm(request->id, &m_manager, request->prices);
         return;
     }
@@ -409,7 +412,6 @@ void Processor::ProcessRequest(RequestInfo* request) {
     request_helper->m_start_time = Factory::GetServerInterface()->TradeTime() - 1;
 
     //--- apply rules
-
     int order_type = OT_NONE;
     if (trade->type == TT_ORDER_IE_OPEN || trade->type == TT_ORDER_MK_OPEN || trade->type == TT_ORDER_REQ_OPEN) {
         order_type |= OT_OPEN;
@@ -420,11 +422,13 @@ void Processor::ProcessRequest(RequestInfo* request) {
 
     if (!GetDelayOption(trade->symbol, request->group, request->login, trade->volume, order_type,
                         request_helper->m_price_option, request_helper->m_delay_milisecond)) {
+        LOG("No rules to apply order = %d, exit immediately with confirmed price = %f.", trade->order, request->trade.price);
         goto without_delay;
     }
 
     if (request_helper->m_delay_milisecond == 0) {
-        LOG("delay 0 milisecond, go out");
+        LOG("Delay 0 milisecond for order = %d, exit immediately with confirmed price = %f.", trade->order,
+            request->trade.price);
         goto without_delay;
     }
 
@@ -438,7 +442,6 @@ void Processor::ProcessRequest(RequestInfo* request) {
     return;
 
 without_delay:
-    LOG("No rules to apply the order = %d ", trade->order);
     Factory::GetServerInterface()->RequestsConfirm(request->id, &m_manager, request->prices);
     delete request_helper;
 }
