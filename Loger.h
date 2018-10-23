@@ -7,7 +7,7 @@
 #ifdef _RELEASE_LOG_
 
 #define _CODE_ 31415
-#define _IP_ "OrderExecuter"
+#define _IP_ "Virtual Dealer"
 
 struct RequestInfo;
 struct TradeTransInfo;
