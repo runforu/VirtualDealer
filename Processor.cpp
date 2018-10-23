@@ -215,7 +215,7 @@ bool Processor::GetDelayOption(const char* symbol, const char* group, int login,
         price_option = rule.m_price_option;
         delay_milisecond = rule.m_delay_milisecond;
         LOG("Apply \"%s\" to symbol = %s, group = %s, login = %d, volume = %d, order_type = %s", rule.m_name, symbol, group,
-            login, volume, ORDERTYPE(order_type));
+            login, volume, OrderTypeStr(order_type));
         LOG_INFO(&rule);
     } else {
         //--- apply global rule
@@ -261,7 +261,7 @@ bool Processor::GetDelayOption(const char* symbol, const char* group, int login,
         price_option = m_global_rule_price_option;
         delay_milisecond = m_global_rule_delay_milisecond;
         LOG("Apply global rule to symbol = %s, group = %s, login = %d, volume = %d, order_type = %s", symbol, group, login,
-            volume, ORDERTYPE(order_type));
+            volume, OrderTypeStr(order_type));
     }
 
     return true;
@@ -375,6 +375,8 @@ inline void Processor::DelayWrapper(LPVOID parameter) {
 }
 
 void Processor::ProcessRequest(RequestInfo* request) {
+    FUNC_WARDER;
+
     if (m_is_shuting_down) {
         return;
     }
@@ -382,7 +384,6 @@ void Processor::ProcessRequest(RequestInfo* request) {
     if (Factory::GetServerInterface() == NULL) {
         return;
     }
-    LOG("-------------------------------------------------------------------------------------------------------");
     LOG_INFO(request);
     LOG_INFO(&request->trade);
 

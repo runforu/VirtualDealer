@@ -4,6 +4,7 @@
 #include "FileUtil.h"
 #include "Loger.h"
 #include "RuleContainer.h"
+#include "common.h"
 
 RuleContainer::RuleContainer() : m_rule_total(0) {
     ZeroMemory(m_rules, sizeof(m_rules));
@@ -78,7 +79,7 @@ bool RuleContainer::ParseRule(const char* line, Rule* rule) {
     } else {
         return false;
     }
-    LOG("rule ---  order_type = %s, [%s]", pchar, ORDERTYPE(rule->m_order_type));
+    LOG("rule ---  order_type = %s, [%s]", pchar, OrderTypeStr(rule->m_order_type));
 
     //--- copy delay_milisecond
     pchar = StrRange(NULL, '<', '>', &cp);
@@ -96,7 +97,7 @@ bool RuleContainer::ParseRule(const char* line, Rule* rule) {
     } else {
         return false;
     }
-    LOG("rule ---  price_option = %s [%s]", pchar, PRICEOPTION(rule->m_price_option));
+    LOG("rule ---  price_option = %s [%s]", pchar, PriceOptionStr(rule->m_price_option));
 
     return true;
 }
@@ -126,7 +127,7 @@ void RuleContainer::Clear() {
 bool RuleContainer::Search(const char* symbol, const char* group, int client_login, int volume, int order_type, Rule* rule) {
     m_sync.Lock();
     LOG("Search symbole = %s, group = %s, login = %d, volume = %d, order type = %s", symbol, group, client_login, volume,
-        ORDERTYPE(order_type));
+        OrderTypeStr(order_type));
     for (int i = 0; i < m_rule_total; i++) {
         // LOG("--> rule name = %s", this->m_rules[i].m_name);
         if (strcmp(this->m_rules[i].m_symbol, "*") != 0 && strcmp(symbol, this->m_rules[i].m_symbol) != 0) {
