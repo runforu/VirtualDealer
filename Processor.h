@@ -41,7 +41,63 @@ struct SlTpDelayHelper {
 };
 
 class Processor {
-    friend class Factory;
+public:
+    static Processor& Instance();
+
+    inline void Reinitialize() {
+        InterlockedExchange(&m_reinitialize_flag, 1);
+    }
+
+    void ShowStatus(void);
+
+    void ProcessRequest(RequestInfo* request);
+
+    bool ActivatePendingOrder(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol, const TradeRecord* pending,
+                              TradeRecord* trade);
+
+    bool AllowSLTP(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol, TradeRecord* trade, const int isTP);
+
+    void TickApply(const ConSymbol* symbol, FeedTick* tick);
+
+    // for test purpose
+    void OnTradeTransaction(TradeTransInfo* trans, const UserInfo* user);
+
+    bool IsPendingProcessing(const ConGroup* group, const ConSymbol* symbol, const TradeRecord* trade);
+
+    void Initialize(void);
+
+    void Shutdown(void);
+
+private:
+    Processor();
+    ~Processor();
+    Processor(Processor const&) {}
+    void operator=(Processor const&) {}
+
+    //--- Hanlde triger order price like pending, sl and tp, trade cmd in
+    //{OP_BUY,OP_SELL,OP_BUY_LIMIT,OP_SELL_LIMIT,OP_BUY_STOP,OP_SELL_STOP} price is the trigered price.
+    double GetPrice(const char* symbol, const UserInfo* user_info, int cmd, PriceOption price_option, time_t from, int diff,
+                    double trigered_price);
+
+    void GetPrice(RequestHelper* helper, double* prices);
+
+    static int GetSpreadDiff(RequestInfo* request);
+
+    static int GetSpreadDiff(const char* group);
+
+    static bool SpreadDiff(const char* group, const char* symbol, TickAPI* tick, int diff);
+
+    UINT Delay(LPVOID parameter);
+    static void __cdecl DelayWrapper(LPVOID parameter);
+
+    UINT DelaySlTpTriger(LPVOID parameter);
+    static void __cdecl DelaySlTpTrigerWrapper(LPVOID parameter);
+
+    UINT DelayPendingTriger(LPVOID parameter);
+    static void __cdecl DelayPendingTrigerWrapper(LPVOID parameter);
+
+    bool GetDelayOption(const char* symbol, const char* group, int client_login, int volume, int order_type,
+                        PriceOption& price_option, int& delay_milisecond);
 
 private:
     //--- dealer user info
@@ -80,50 +136,6 @@ private:
     ProcessingHandle m_processing_handle;
 
     LONG m_is_shuting_down;
-
-public:
-    inline void Reinitialize() {
-        InterlockedExchange(&m_reinitialize_flag, 1);
-    }
-    void ShowStatus();
-    void ProcessRequest(RequestInfo* request);
-    bool ActivatePendingOrder(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol, const TradeRecord* pending,
-                              TradeRecord* trade);
-    bool AllowSLTP(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol, TradeRecord* trade, const int isTP);
-    void TickApply(const ConSymbol* symbol, FeedTick* tick);
-    // for test purpose
-    void OnTradeTransaction(TradeTransInfo* trans, const UserInfo* user);
-
-    bool IsPendingProcessing(const ConGroup* group, const ConSymbol* symbol, const TradeRecord* trade);
-
-    void Processor::Initialize();
-    void Shutdown(void);
-
-private:
-    Processor();
-    ~Processor();
-
-    //--- Hanlde triger order price like pending, sl and tp, trade cmd in
-    //{OP_BUY,OP_SELL,OP_BUY_LIMIT,OP_SELL_LIMIT,OP_BUY_STOP,OP_SELL_STOP} price is the trigered price.
-    double GetPrice(const char* symbol, const UserInfo* user_info, int cmd, PriceOption price_option, time_t from, int diff,
-                    double trigered_price);
-    void GetPrice(RequestHelper* helper, double* prices);
-
-    static int GetSpreadDiff(RequestInfo* request);
-    static int GetSpreadDiff(const char* group);
-    static bool SpreadDiff(const char* group, const char* symbol, TickAPI* tick, int diff);
-
-    UINT Delay(LPVOID parameter);
-    static void __cdecl DelayWrapper(LPVOID parameter);
-
-    UINT DelaySlTpTriger(LPVOID parameter);
-    static void __cdecl DelaySlTpTrigerWrapper(LPVOID parameter);
-
-    UINT DelayPendingTriger(LPVOID parameter);
-    static void __cdecl DelayPendingTrigerWrapper(LPVOID parameter);
-
-    bool GetDelayOption(const char* symbol, const char* group, int client_login, int volume, int order_type,
-                        PriceOption& price_option, int& delay_milisecond);
 };
 
 //+------------------------------------------------------------------+

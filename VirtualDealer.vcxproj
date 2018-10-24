@@ -184,21 +184,21 @@
     <ClCompile Include="RuleContainer.cpp" />
     <ClCompile Include="FileUtil.cpp" />
     <ClCompile Include="Loger.cpp" />
+    <ClCompile Include="ServerApi.cpp" />
     <ClCompile Include="TickHistory.cpp" />
     <ClCompile Include="VirtualDealer.cpp" />
-    <ClCompile Include="Factory.cpp" />
     <ClCompile Include="Processor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common.h" />
     <ClInclude Include="Config.h" />
-    <ClInclude Include="Factory.h" />
     <ClInclude Include="ProcessingHandle.h" />
     <ClInclude Include="ProcessingOrder.h" />
     <ClInclude Include="RuleContainer.h" />
     <ClInclude Include="FileUtil.h" />
     <ClInclude Include="Loger.h" />
     <ClInclude Include="Processor.h" />
+    <ClInclude Include="ServerApi.h" />
     <ClInclude Include="Synchronizer.h" />
     <ClInclude Include="TickHistory.h" />
   </ItemGroup>

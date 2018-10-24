@@ -1,15 +1,17 @@
 #include <stdio.h>
 #include <time.h>
-#include "Factory.h"
 #include "Loger.h"
+#include "RuleContainer.h"
+#include "ServerApi.h"
 #include "common.h"
+#include "../include/MT4ServerAPI.h"
 
 #ifdef _RELEASE_LOG_
 
 Synchronizer Loger::s_synchronizer;
 
 void Loger::out(const int code, const char* ip, const char* msg, ...) {
-    if (Factory::GetServerInterface() == NULL || msg == NULL) {
+    if (ServerApi::Api() == NULL || msg == NULL) {
         return;
     }
 
@@ -21,7 +23,7 @@ void Loger::out(const int code, const char* ip, const char* msg, ...) {
     va_end(arg_ptr);
     s_synchronizer.Unlock();
 
-    Factory::GetServerInterface()->LogsOut(code, ip, buffer);
+    ServerApi::Api()->LogsOut(code, ip, buffer);
 }
 
 void Loger::out(const int code, const char* ip, const RequestInfo* request) {

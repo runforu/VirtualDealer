@@ -24,6 +24,12 @@ Config::~Config() {
 
     m_sync.Unlock();
 }
+
+Config& Config::Instance() {
+    static Config _instance;
+    return _instance;
+}
+
 //+------------------------------------------------------------------+
 //| Load config from file                                            |
 //+------------------------------------------------------------------+

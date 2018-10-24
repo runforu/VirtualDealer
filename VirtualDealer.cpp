@@ -1,7 +1,7 @@
 #include "Config.h"
-#include "Factory.h"
 #include "Loger.h"
 #include "Processor.h"
+#include "ServerApi.h"
 
 PluginInfo ExtPluginInfo = {"Virtual Dealer", 1, "DH Copyright.", {0}};
 
@@ -15,7 +15,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD ul_reason_for_call, LPVOID /*lpReser
                 *cp = 0;
                 strcat(tmp, ".ini");
             }
-            Factory::GetConfig()->Load(tmp);
+            Config::Instance().Load(tmp);
             break;
 
         case DLL_THREAD_ATTACH:
@@ -23,7 +23,6 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD ul_reason_for_call, LPVOID /*lpReser
             break;
 
         case DLL_PROCESS_DETACH:
-            Factory::GetProcessor()->ShowStatus();
             break;
     }
     return (TRUE);
@@ -44,40 +43,40 @@ int APIENTRY MtSrvStartup(CServerInterface* server) {
         return (FALSE);
     }
     //--- save server interface link
-    Factory::SetServerInterface(server);
+    ServerApi::Initialize(server);
 
     //--- initialize dealer helper
-    Factory::GetProcessor()->Initialize();
+    Processor::Instance().Initialize();
 
     return (TRUE);
 }
 
 void APIENTRY MtSrvCleanup() {
     LOG("MtSrvCleanup");
-    Factory::GetProcessor()->Shutdown();
-    Factory::SetServerInterface(NULL);
+    Processor::Instance().Shutdown();
+    Processor::Instance().ShowStatus();
 }
 
 int APIENTRY MtSrvPluginCfgSet(const PluginCfg* values, const int total) {
     LOG("MtSrvPluginCfgSet total = %d.", total);
-    int res = Factory::GetConfig()->Set(values, total);
-    Factory::GetProcessor()->Reinitialize();
+    int res = Config::Instance().Set(values, total);
+    Processor::Instance().Reinitialize();
     return (res);
 }
 
 int APIENTRY MtSrvPluginCfgNext(const int index, PluginCfg* cfg) {
     LOG("MtSrvPluginCfgNext index=%d, name=%s, value=%s.", index, cfg->name, cfg->value);
-    return Factory::GetConfig()->Next(index, cfg);
+    return Config::Instance().Next(index, cfg);
 }
 
 int APIENTRY MtSrvPluginCfgTotal() {
     LOG("MtSrvPluginCfgTotal.");
-    return Factory::GetConfig()->Total();
+    return Config::Instance().Total();
 }
 
 int APIENTRY MtSrvTradeTransaction(TradeTransInfo* trans, const UserInfo* user, int* request_id) {
     LOG("MtSrvTradeTransaction.");
-    Factory::GetProcessor()->OnTradeTransaction(trans, user);
+    Processor::Instance().OnTradeTransaction(trans, user);
     return RET_OK;
 }
 
@@ -89,7 +88,7 @@ int APIENTRY MtSrvTradeRequestFilter(RequestInfo* request, const int isdemo) {
 void APIENTRY MtSrvTradeRequestApply(RequestInfo* request, const int isdemo) {
     LOG("MtSrvTradeRequestApply.");
     if (request != NULL && isdemo == FALSE) {
-        Factory::GetProcessor()->ProcessRequest(request);
+        Processor::Instance().ProcessRequest(request);
     }
 }
 
@@ -100,7 +99,7 @@ int APIENTRY MtSrvTradeStopsFilter(const ConGroup* group, const ConSymbol* symbo
 int APIENTRY MtSrvTradeStopsApply(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol, TradeRecord* trade,
                                   const int isTP) {
     // Here, delay tp sl
-    if (Factory::GetProcessor()->AllowSLTP(user, group, symbol, trade, isTP)) {
+    if (Processor::Instance().AllowSLTP(user, group, symbol, trade, isTP)) {
         // activate tp/sl
         LOG("MtSrvTradeStopsApply RET_OK returned: sl/tp closed");
         return RET_OK;
@@ -118,7 +117,7 @@ int APIENTRY MtSrvTradePendingsApply(const UserInfo* user, const ConGroup* group
                                      const TradeRecord* pending, TradeRecord* trade) {
     return RET_OK;
     // Here, delay activation
-    if (Factory::GetProcessor()->ActivatePendingOrder(user, group, symbol, pending, trade)) {
+    if (Processor::Instance().ActivatePendingOrder(user, group, symbol, pending, trade)) {
         // activate order
         LOG("MtSrvTradePendingsApply RET_OK returned: activate order immediately");
         return RET_OK;
@@ -129,5 +128,5 @@ int APIENTRY MtSrvTradePendingsApply(const UserInfo* user, const ConGroup* group
 }
 
 void APIENTRY MtSrvHistoryTickApply(const ConSymbol* symbol, FeedTick* inf) {
-    Factory::GetProcessor()->TickApply(symbol, inf);
+    Processor::Instance().TickApply(symbol, inf);
 }
