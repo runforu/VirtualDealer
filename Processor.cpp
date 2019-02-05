@@ -314,7 +314,7 @@ void Processor::Initialize() {
 
     Config::Instance().GetInteger("Max Volume", &m_global_rule_max_volume, "-1");
 
-    Config::Instance().GetString("Oder Type", buffer, sizeof(buffer) - 1, "*");
+    Config::Instance().GetString("Order Type", buffer, sizeof(buffer) - 1, "*");
     m_global_rule_order_type = ToOrderType(buffer, OT_ALL);
 
     Config::Instance().GetInteger("Delayed Miliseconds", &m_global_rule_delay_milisecond, "1000");
