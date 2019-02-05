@@ -6,7 +6,7 @@
 #include "common.h"
 #include "../include/MT4ServerAPI.h"
 
-#ifdef _RELEASE_LOG_
+#if defined(_RELEASE_LOG_) || defined(_DEBUG)
 
 Synchronizer Loger::s_synchronizer;
 

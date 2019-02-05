@@ -4,7 +4,7 @@
 #include "common.h"
 #include "Synchronizer.h"
 
-#ifdef _RELEASE_LOG_
+#if defined(_RELEASE_LOG_) || defined(_DEBUG)
 
 #define _CODE_ 31415
 #define _IP_ "Virtual Dealer"
