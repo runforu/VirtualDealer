@@ -1,8 +1,8 @@
 #include <process.h>
 #include <stdio.h>
 #include "Loger.h"
-#include "ServerApi.h"
 #include "Processor.h"
+#include "ServerApi.h"
 
 void Processor::GetPrice(RequestHelper* helper, double* prices) {
     RequestInfo* request_info = helper->m_request_info;
@@ -283,7 +283,8 @@ int Processor::GetSpreadDiff(const char* group) {
 }
 
 void Processor::Initialize() {
-    m_synchronizer.Lock();
+    FUNC_WARDER;
+
     Config::Instance().GetInteger("Virtual Dealer ID", &m_virtual_dealer_login, "31415");
     m_manager.login = m_virtual_dealer_login;
 
@@ -337,7 +338,6 @@ void Processor::Initialize() {
         _snprintf(buffer, sizeof(buffer) - 1, "Rule_%02d", i++);
     }
     Config::Instance().Save();
-    m_synchronizer.Unlock();
 }
 
 UINT Processor::Delay(LPVOID parameter) {
@@ -408,7 +408,8 @@ void Processor::ProcessRequest(RequestInfo* request) {
 
     TradeTransInfo* trade = &request->trade;
     if (trade->type < TT_ORDER_IE_OPEN || trade->type > TT_ORDER_MK_CLOSE || trade->type == TT_ORDER_PENDING_OPEN) {
-        LOG("trade type is not allowed to delay, exit with confirmed price = %f.");
+        LOG("trade type is not allowed to delay, exit with confirmed price = (%f, %f).", request->prices[0],
+            request->prices[0]);
         ServerApi::Api()->RequestsConfirm(request->id, &m_manager, request->prices);
         return;
     }
@@ -483,10 +484,10 @@ UINT Processor::DelayPendingTriger(LPVOID parameter) {
 
     ServerApi::Api()->TradesCommission(&trade_record, helper->m_group->group, helper->m_symbol);
     ServerApi::Api()->TradesCalcProfit(helper->m_group->group, &trade_record);
-    trade_record.conv_rates[0] = ServerApi::Api()->TradesCalcConvertation(
-        helper->m_group->group, FALSE, trade_record.open_price, helper->m_symbol);
-    trade_record.margin_rate = ServerApi::Api()->TradesCalcConvertation(helper->m_group->group, TRUE,
-                                                                                     trade_record.open_price, helper->m_symbol);
+    trade_record.conv_rates[0] =
+        ServerApi::Api()->TradesCalcConvertation(helper->m_group->group, FALSE, trade_record.open_price, helper->m_symbol);
+    trade_record.margin_rate =
+        ServerApi::Api()->TradesCalcConvertation(helper->m_group->group, TRUE, trade_record.open_price, helper->m_symbol);
     ServerApi::Api()->OrdersUpdate(&trade_record, helper->m_user_info, UPDATE_ACTIVATE);
 
     LOG("Pending order [%d] activated at price %f [original price %f]", trade_record.order, trade_record.open_price,

@@ -129,7 +129,7 @@ private:
     int m_requests_total;
     unsigned int m_requests_processed;
 
-    Synchronizer m_synchronizer;
+    //Synchronizer m_synchronizer;
 
     ProcessingOrder m_processing_pending_order;
     ProcessingOrder m_processing_sltp_order;
