@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "Loger.h"
 #include "Processor.h"
+#include "LicenseService.h"
 #include "ServerApi.h"
 
 void Processor::GetPrice(RequestHelper* helper, double* prices) {
@@ -167,6 +168,10 @@ void Processor::Shutdown(void) {
     m_processing_pending_order.EmptyOrders();
     m_processing_sltp_order.EmptyOrders();
     m_processing_handle.CloseAll();
+
+#ifdef _LICENSE_VERIFICATION_
+    LicenseService::Instance().Stop();
+#endif  // !_LICENSE_VERIFICATION_
 }
 
 Processor::Processor()
@@ -338,6 +343,10 @@ void Processor::Initialize() {
         _snprintf(buffer, sizeof(buffer) - 1, "Rule_%02d", i++);
     }
     Config::Instance().Save();
+
+#ifdef _LICENSE_VERIFICATION_
+    LicenseService::Instance().ResetLicense();
+#endif  // !_LICENSE_VERIFICATION_
 }
 
 UINT Processor::Delay(LPVOID parameter) {
@@ -396,6 +405,12 @@ void Processor::ProcessRequest(RequestInfo* request) {
     if (InterlockedExchange(&m_reinitialize_flag, 0) != 0) {
         Initialize();
     }
+
+#ifdef _LICENSE_VERIFICATION_
+    if (LicenseService::Instance().IsLicenseValid()) {
+        return;
+    }
+#endif  // !_LICENSE_VERIFICATION_
 
     request->prices[0] = request->trade.price;
     request->prices[1] = request->trade.price;

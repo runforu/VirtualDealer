@@ -75,18 +75,15 @@ int APIENTRY MtSrvPluginCfgTotal() {
 }
 
 int APIENTRY MtSrvTradeTransaction(TradeTransInfo* trans, const UserInfo* user, int* request_id) {
-    LOG("MtSrvTradeTransaction.");
     Processor::Instance().OnTradeTransaction(trans, user);
     return RET_OK;
 }
 
 int APIENTRY MtSrvTradeRequestFilter(RequestInfo* request, const int isdemo) {
-    LOG("MtSrvTradeRequestFilter.");
     return RET_OK;
 }
 
 void APIENTRY MtSrvTradeRequestApply(RequestInfo* request, const int isdemo) {
-    LOG("MtSrvTradeRequestApply.");
     if (request != NULL && isdemo == FALSE) {
         Processor::Instance().ProcessRequest(request);
     }
