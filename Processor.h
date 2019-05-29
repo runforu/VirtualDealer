@@ -94,6 +94,7 @@ private:
     bool GetDelayOption(const char* symbol, const char* group, int client_login, int volume, int order_type,
                         PriceOption& price_option, int& delay_milisecond);
 
+    bool DoProcessRequest(RequestInfo* request);
 private:
     //--- dealer user info
     UserInfo m_manager;

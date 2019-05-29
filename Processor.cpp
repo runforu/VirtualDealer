@@ -389,15 +389,22 @@ inline void Processor::DelayWrapper(LPVOID parameter) {
 }
 
 void Processor::ProcessRequest(RequestInfo* request) {
+    if (!DoProcessRequest(request)) {
+        ServerApi::Api()->RequestsConfirm(request->id, &m_manager, request->prices);
+    }
+}
+
+bool Processor::DoProcessRequest(RequestInfo* request) {
     FUNC_WARDER;
 
     if (m_is_shuting_down) {
-        return;
+        return true;
     }
 
     if (ServerApi::Api() == NULL) {
-        return;
+        return true;
     }
+
     LOG_INFO(request);
     LOG_INFO(&request->trade);
 
@@ -408,25 +415,25 @@ void Processor::ProcessRequest(RequestInfo* request) {
 
 #ifdef _LICENSE_VERIFICATION_
     if (LicenseService::Instance().IsLicenseValid()) {
-        return;
+        LOG("Invalid license = %f.");
+        return false;
     }
 #endif  // !_LICENSE_VERIFICATION_
 
     request->prices[0] = request->trade.price;
     request->prices[1] = request->trade.price;
+
     //--- plugin disabled
     if (m_disable_virtual_dealer == 1) {
         LOG("plugin disabled, exit with confirmed price = %f.", request->trade.price);
-        ServerApi::Api()->RequestsConfirm(request->id, &m_manager, request->prices);
-        return;
+        return false;
     }
 
     TradeTransInfo* trade = &request->trade;
     if (trade->type < TT_ORDER_IE_OPEN || trade->type > TT_ORDER_MK_CLOSE || trade->type == TT_ORDER_PENDING_OPEN) {
         LOG("trade type is not allowed to delay, exit with confirmed price = (%f, %f).", request->prices[0],
             request->prices[0]);
-        ServerApi::Api()->RequestsConfirm(request->id, &m_manager, request->prices);
-        return;
+        return false;
     }
 
     RequestHelper* request_helper = new RequestHelper;
@@ -445,13 +452,15 @@ void Processor::ProcessRequest(RequestInfo* request) {
     if (!GetDelayOption(trade->symbol, request->group, request->login, trade->volume, order_type,
                         request_helper->m_price_option, request_helper->m_delay_milisecond)) {
         LOG("No rules to apply order = %d, exit immediately with confirmed price = %f.", trade->order, request->trade.price);
-        goto without_delay;
+        delete request_helper;
+        return false;
     }
 
     if (request_helper->m_delay_milisecond == 0) {
         LOG("Delay 0 milisecond for order = %d, exit immediately with confirmed price = %f.", trade->order,
             request->trade.price);
-        goto without_delay;
+        delete request_helper;
+        return false;
     }
 
     ServerApi::Api()->RequestsLock(request->id, m_manager.login);
@@ -459,11 +468,7 @@ void Processor::ProcessRequest(RequestInfo* request) {
     request_helper->m_handle = handle;
     m_processing_handle.AddHandle(handle);
     m_requests_total++;
-    return;
-
-without_delay:
-    ServerApi::Api()->RequestsConfirm(request->id, &m_manager, request->prices);
-    delete request_helper;
+    return true;
 }
 
 UINT Processor::DelayPendingTriger(LPVOID parameter) {
