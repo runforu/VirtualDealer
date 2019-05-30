@@ -415,7 +415,7 @@ bool Processor::DoProcessRequest(RequestInfo* request) {
 
 #ifdef _LICENSE_VERIFICATION_
     if (LicenseService::Instance().IsLicenseValid()) {
-        LOG("Invalid license = %f.");
+        LOG("Invalid license.");
         return false;
     }
 #endif  // !_LICENSE_VERIFICATION_
