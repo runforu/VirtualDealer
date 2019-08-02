@@ -12,6 +12,9 @@ EXPORTS
     MtSrvTradeRequestFilter
     MtSrvTradeRequestApply
 
+    MtSrvTradeStopoutsFilter
+    MtSrvTradeStopoutsApply
+
     MtSrvTradeStopsFilter
     MtSrvTradeStopsApply
 

@@ -89,6 +89,16 @@ void APIENTRY MtSrvTradeRequestApply(RequestInfo* request, const int isdemo) {
     }
 }
 
+int APIENTRY MtSrvTradeStopoutsFilter(const ConGroup* group, const ConSymbol* symbol, const int login, const double equity,
+                                      const double margin) {
+    return RET_OK;
+}
+
+int APIENTRY MtSrvTradeStopoutsApply(const UserInfo* user, const ConGroup* group, const ConSymbol* symbol,
+                                     TradeRecord* stopout) {
+    return RET_OK;
+}
+
 int APIENTRY MtSrvTradeStopsFilter(const ConGroup* group, const ConSymbol* symbol, const TradeRecord* trade) {
     return RET_OK;
 }
