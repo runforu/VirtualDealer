@@ -274,6 +274,7 @@
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="LicenseClient.cpp" />
     <ClCompile Include="LicenseService.cpp" />
+    <ClCompile Include="PluginVersion.cpp" />
     <ClCompile Include="ProcessingHandle.cpp" />
     <ClCompile Include="ProcessingOrder.cpp" />
     <ClCompile Include="RuleContainer.cpp" />
